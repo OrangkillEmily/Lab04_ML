@@ -1,0 +1,34 @@
+{
+    "dataset_name": "Boston Housing Dataset (Harrison & Rubinfeld, 1978)",
+    "n_samples": 506,
+    "n_features": 13,
+    "target_column": "MEDV",
+    "total_missing_values": 0,
+    "duplicate_records": 0,
+    "target_summary": {
+        "count": 506.0,
+        "mean": 22.5328,
+        "std": 9.1971,
+        "min": 5.0,
+        "25%": 17.025,
+        "50%": 21.2,
+        "75%": 25.0,
+        "max": 50.0
+    },
+    "correlation_with_target": {
+        "RM": 0.6954,
+        "ZN": 0.3604,
+        "B": 0.3335,
+        "DIS": 0.2499,
+        "CHAS": 0.1753,
+        "AGE": -0.377,
+        "RAD": -0.3816,
+        "CRIM": -0.3883,
+        "NOX": -0.4273,
+        "TAX": -0.4685,
+        "INDUS": -0.4837,
+        "PTRATIO": -0.5078,
+        "LSTAT": -0.7377
+    },
+    "censoring_count_at_50k": 16
+}
