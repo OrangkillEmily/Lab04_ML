@@ -2,7 +2,7 @@
 
 - **Học phần:** Học máy (Machine Learning) – Trường Đại học Giao thông Vận tải TP.HCM (UTH)
 - **Chủ đề:** Chương 5 – Mạng Nơ-ron Nhân tạo (Artificial Neural Networks – Practice Exercise 4: Predicting House Prices)
-- **Phiên thực nghiệm (Run ID):** `20261113_151159_cec934` (Trạng thái: **SUCCESS**)
+- **Phiên thực nghiệm (Run ID):** `20261113_170159_ef05f8` (Trạng thái: **SUCCESS**)
 - **Bộ dữ liệu chuẩn:** Boston Housing Dataset (`data/raw/boston_housing.csv` – 506 mẫu, 13 đặc trưng, biến mục tiêu `MEDV` đơn vị `$1,000 USD`)
 
 ## 1. Mục tiêu bài thực hành
@@ -87,10 +87,10 @@ $$\text{MAPE (\%)} = \frac{100\%}{N}\sum_{i=1}^{N}\left|\frac{y_i - \hat{y}_i}{y
 
 | Mô hình (Model) | Test MSE (↓) | Test RMSE (↓) | Test MAE (↓) | Test MAPE (↓) | Test R² (↑) | Train MSE | Train MAPE | Train R² | Thời gian Train (s) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **MLP Regression** | 11.5628 | 3.4004 | 2.3160 | 12.22% | 0.8423 | 6.8245 | 9.62% | 0.9214 | 15.8636s |
-| **Linear Regression** | 24.2911 | 4.9286 | 3.1891 | 16.87% | 0.6688 | 21.6414 | 16.57% | 0.7509 | 0.0086s |
-| **Decision Tree** | 10.5431 | 3.2470 | 2.5192 | 13.88% | 0.8562 | 6.6944 | 9.60% | 0.9229 | 0.0065s |
-| **Random Forest** | 11.5205 | 3.3942 | 2.0994 | 10.82% | 0.8429 | 4.1200 | 6.63% | 0.9526 | 0.1635s |
+| **MLP Regression** | 11.5628 | 3.4004 | 2.3160 | 12.22% | 0.8423 | 6.8245 | 9.62% | 0.9214 | 15.7892s |
+| **Linear Regression** | 24.2911 | 4.9286 | 3.1891 | 16.87% | 0.6688 | 21.6414 | 16.57% | 0.7509 | 0.0083s |
+| **Decision Tree** | 10.5431 | 3.2470 | 2.5192 | 13.88% | 0.8562 | 6.6944 | 9.60% | 0.9229 | 0.0071s |
+| **Random Forest** | 11.5205 | 3.3942 | 2.0994 | 10.82% | 0.8429 | 4.1200 | 6.63% | 0.9526 | 0.1577s |
 
 - **Mô hình tốt nhất theo Test R²:** `Decision Tree` (`R² = 0.8562`, `MSE = 10.5431`, `MAPE = 13.88%`).
 

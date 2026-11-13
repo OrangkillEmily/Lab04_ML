@@ -1,6 +1,6 @@
 {
-    "run_id": "20261113_151159_cec934",
-    "timestamp": "2026-11-13T15:12:28+07:00",
+    "run_id": "20261113_170159_ef05f8",
+    "timestamp": "2026-11-13T17:02:29+07:00",
     "backend_info": {
         "has_tensorflow": true,
         "has_sklearn": true,
@@ -53,10 +53,10 @@
         "batch_size": 32
     },
     "training_times_seconds": {
-        "MLP Regression": 15.8636,
-        "Linear Regression": 0.0086,
-        "Decision Tree": 0.0065,
-        "Random Forest": 0.1635
+        "MLP Regression": 15.7892,
+        "Linear Regression": 0.0083,
+        "Decision Tree": 0.0071,
+        "Random Forest": 0.1577
     },
     "saved_models": [
         "models/mlp_regression.keras",
