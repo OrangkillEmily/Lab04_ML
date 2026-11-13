@@ -1,0 +1,104 @@
+# ==============================================================================
+# CẤU HÌNH TRUNG TÂM DỰ ÁN LAB04: MULTILAYER PERCEPTRON REGRESSION
+# Bài toán: Dự đoán giá nhà (House Price Prediction - Boston Housing Dataset)
+# ==============================================================================
+
+project:
+  name: "LAB04_MLP_Regression"
+  title: "Multilayer Perceptron Regression — House Price Prediction"
+  course: "Machine Learning — Practice Exercise 4 (Artificial Neural Networks)"
+  version: "1.1.0"
+
+data:
+  dataset_name: "Boston Housing Dataset"
+  raw_path: "data/raw/boston_housing.csv"
+  processed_dir: "data/processed"
+  target_column: "MEDV"
+  feature_columns:
+    - "CRIM"
+    - "ZN"
+    - "INDUS"
+    - "CHAS"
+    - "NOX"
+    - "RM"
+    - "AGE"
+    - "DIS"
+    - "RAD"
+    - "TAX"
+    - "PTRATIO"
+    - "B"
+    - "LSTAT"
+  test_size: 0.2
+  validation_split: 0.2
+  random_state: 42
+
+preprocessing:
+  scaler_type: "StandardScaler"
+  with_mean: true
+  with_std: true
+  drop_duplicates: false
+  handle_missing: "median"
+
+mlp_model:
+  architecture_name: "Sequential_MLP_Regressor"
+  hidden_layers:
+    - units: 32
+      activation: "relu"
+      name: "hidden_layer_1"
+    - units: 16
+      activation: "relu"
+      name: "hidden_layer_2"
+  output_layer:
+    units: 1
+    activation: "linear"
+    name: "output_layer"
+  optimizer: "adam"
+  learning_rate: 0.005
+  beta_1: 0.9
+  beta_2: 0.999
+  epsilon: 1.0e-7
+  loss: "mean_squared_error"
+  metrics:
+    - "mae"
+    - "mape"
+  epochs: 100
+  batch_size: 32
+  validation_split: 0.2
+  early_stopping:
+    enabled: true
+    monitor: "val_loss"
+    patience: 15
+    restore_best_weights: true
+    min_delta: 0.001
+
+baseline_models:
+  linear_regression:
+    fit_intercept: true
+  decision_tree:
+    max_depth: 6
+    min_samples_split: 5
+    min_samples_leaf: 2
+    random_state: 42
+  random_forest:
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 4
+    min_samples_leaf: 2
+    max_features: "sqrt"
+    random_state: 42
+
+paths:
+  models_dir: "models"
+  logs_dir: "logs"
+  progress_dir: "progress_results"
+  reports_dir: "reports"
+  figures_dir: "reports/figures"
+  metrics_dir: "reports/metrics"
+  predictions_dir: "reports/predictions"
+  experiment_log_csv: "docs/experiment_logs.csv"
+  experiment_summary_md: "reports/experiment_summary.md"
+
+logging:
+  level: "INFO"
+  encoding: "utf-8"
+  figure_dpi: 300
