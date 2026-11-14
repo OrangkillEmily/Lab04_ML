@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Lab 04 — Dự Đoán Giá Nhà với Mạng Nơ-ron Đa Tầng (MLP Regression)</title>
   <style>
+    @page {
+      size: A4;
+      margin: 12mm 13mm;
+      @bottom-right {
+        content: "Trang " counter(page) " / " counter(pages);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 9pt;
+        color: #4b5563;
+      }
+    }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; scroll-padding-top: 100px; }
     body {
@@ -238,6 +248,33 @@
       main { padding: 16px; }
       header { padding: 28px 22px; }
       .card-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      html, body {
+        background: #ffffff !important;
+        font-size: 10.5pt !important;
+        line-height: 1.5 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+      nav, .filter-bar, header .links { display: none !important; }
+      header { padding: 24px 26px !important; margin-bottom: 16px !important; border-radius: 14px !important; break-inside: avoid; }
+      header h1 { font-size: 22pt !important; margin: 10px 0 !important; }
+      header p { font-size: 10.5pt !important; margin-bottom: 12px !important; }
+      .kpi-strip { grid-template-columns: repeat(4, 1fr) !important; gap: 10px !important; margin-top: 14px !important; }
+      .kpi-box { padding: 10px 12px !important; }
+      .kpi-box .kpi-val { font-size: 14pt !important; }
+      .flow-map { padding: 16px 18px !important; margin-bottom: 20px !important; break-inside: avoid; }
+      .map-scroll { overflow: visible !important; }
+      .map-svg { min-width: 0 !important; width: 100% !important; height: auto !important; }
+      .stage { margin: 0 0 14px 14px !important; padding: 0 0 8px 18px !important; }
+      .card-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; margin: 10px 0 !important; }
+      .image-card { break-inside: avoid; page-break-inside: avoid; }
+      .image-card img { max-height: 195px !important; padding: 4px !important; }
+      .math-panel, .takeaway, tr { break-inside: avoid; page-break-inside: avoid; }
+      table { font-size: 10pt !important; margin: 10px 0 !important; }
+      th, td { padding: 6px 7px !important; }
     }
   </style>
 </head>
@@ -748,7 +785,8 @@ X_train_sub, X_val_scaled, y_train_sub, y_val = train_test_split_df(
 [2026-11-13T17:02:29+07:00] [SUCCESS] [TRAINING] Hoàn tất toàn bộ giai đoạn Training trong 19.3736s.
 [2026-11-13T17:02:29+07:00] [START] [EVALUATION] Bắt đầu đánh giá hiệu suất 4 mô hình (MSE, RMSE, MAE, MAPE, R²) trên tập Train và Test.
 [2026-11-13T17:02:39+07:00] [SUCCESS] [EVALUATION] Hoàn tất đánh giá mô hình trong 9.1857s. Best MSE=Decision Tree (10.5431), Best MAPE=Random Forest (10.82%).
-[2026-11-13T17:02:39+07:00] [START] [REPORTING] Bắt đầu tổng hợp báo cáo thực nghiệm chuẩn UTH.</code></pre>
+[2026-11-13T17:02:39+07:00] [START] [REPORTING] Bắt đầu tổng hợp báo cáo thực nghiệm chuẩn UTH.
+[2026-11-13T17:02:45+07:00] [SUCCESS] [REPORTING] Đã xuất bộ báo cáo UTH trong 6.0209s.</code></pre>
     </div>
   </details>
 </section>

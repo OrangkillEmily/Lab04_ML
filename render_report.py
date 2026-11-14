@@ -6,6 +6,10 @@ import base64
 import html
 import io
 import json
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -466,6 +470,16 @@ def render_html(
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Lab 04 — Dự Đoán Giá Nhà với Mạng Nơ-ron Đa Tầng (MLP Regression)</title>
   <style>
+    @page {{
+      size: A4;
+      margin: 12mm 13mm;
+      @bottom-right {{
+        content: "Trang " counter(page) " / " counter(pages);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        font-size: 9pt;
+        color: #4b5563;
+      }}
+    }}
     * {{ box-sizing: border-box; }}
     html {{ scroll-behavior: smooth; scroll-padding-top: 100px; }}
     body {{
@@ -699,6 +713,33 @@ def render_html(
       main {{ padding: 16px; }}
       header {{ padding: 28px 22px; }}
       .card-grid {{ grid-template-columns: 1fr; }}
+    }}
+    @media print {{
+      html, body {{
+        background: #ffffff !important;
+        font-size: 10.5pt !important;
+        line-height: 1.5 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }}
+      main {{ max-width: 100% !important; padding: 0 !important; margin: 0 !important; }}
+      nav, .filter-bar, header .links {{ display: none !important; }}
+      header {{ padding: 24px 26px !important; margin-bottom: 16px !important; border-radius: 14px !important; break-inside: avoid; }}
+      header h1 {{ font-size: 22pt !important; margin: 10px 0 !important; }}
+      header p {{ font-size: 10.5pt !important; margin-bottom: 12px !important; }}
+      .kpi-strip {{ grid-template-columns: repeat(4, 1fr) !important; gap: 10px !important; margin-top: 14px !important; }}
+      .kpi-box {{ padding: 10px 12px !important; }}
+      .kpi-box .kpi-val {{ font-size: 14pt !important; }}
+      .flow-map {{ padding: 16px 18px !important; margin-bottom: 20px !important; break-inside: avoid; }}
+      .map-scroll {{ overflow: visible !important; }}
+      .map-svg {{ min-width: 0 !important; width: 100% !important; height: auto !important; }}
+      .stage {{ margin: 0 0 14px 14px !important; padding: 0 0 8px 18px !important; }}
+      .card-grid {{ grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; margin: 10px 0 !important; }}
+      .image-card {{ break-inside: avoid; page-break-inside: avoid; }}
+      .image-card img {{ max-height: 195px !important; padding: 4px !important; }}
+      .math-panel, .takeaway, tr {{ break-inside: avoid; page-break-inside: avoid; }}
+      table {{ font-size: 10pt !important; margin: 10px 0 !important; }}
+      th, td {{ padding: 6px 7px !important; }}
     }}
   </style>
 </head>
@@ -1260,8 +1301,111 @@ X_train_sub, X_val_scaled, y_train_sub, y_val = train_test_split_df(
     print(
         f"Đã tạo thành công báo cáo HTML: {target_out} (dung lượng: {len(html_content):,} bytes)"
     )
-    return target_out
+    
+    pdf_out = root / "reports" / "LAB_04_REPORT.pdf"
+    if export_html_to_pdf(target_out, pdf_out):
+        for extra_pdf in [
+            root / "docs" / "LAB_04_REPORT.pdf",
+            root / "reports" / f"report_{active_run_id}.pdf",
+        ]:
+            try:
+                shutil.copy2(pdf_out, extra_pdf)
+            except Exception:
+                pass
+        print(f"Đã tạo thành công báo cáo PDF : {pdf_out} (dung lượng: {pdf_out.stat().st_size:,} bytes)")
 
+    return target_out
+    
+def _find_chromium_binary() -> Optional[str]:
+    """Tìm đường dẫn trình duyệt Microsoft Edge, Google Chrome hoặc Chromium trên Windows/macOS/Linux."""
+    candidates: List[str] = []
+    for cmd in ("msedge", "chrome", "google-chrome", "chromium", "chromium-browser"):
+        found = shutil.which(cmd)
+        if found:
+            candidates.append(found)
+
+    program_files = os.environ.get("PROGRAMFILES", r"C:\Program Files")
+    program_files_x86 = os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")
+    local_appdata = os.environ.get("LOCALAPPDATA", "")
+    win_paths = [
+        Path(program_files_x86) / "Microsoft/Edge/Application/msedge.exe",
+        Path(program_files) / "Microsoft/Edge/Application/msedge.exe",
+        Path(program_files) / "Google/Chrome/Application/chrome.exe",
+        Path(program_files_x86) / "Google/Chrome/Application/chrome.exe",
+    ]
+    if local_appdata:
+        win_paths.append(Path(local_appdata) / "Google/Chrome/Application/chrome.exe")
+        win_paths.append(Path(local_appdata) / "Microsoft/Edge/Application/msedge.exe")
+
+    for p in win_paths:
+        if p.exists():
+            candidates.append(str(p))
+
+    return candidates[0] if candidates else None
+
+
+def export_html_to_pdf(html_path: Path, pdf_path: Path) -> bool:
+    """Tự động chuyển đổi tệp báo cáo HTML sang PDF bằng Edge/Chrome Headless hoặc Selenium CDP."""
+    pdf_path.parent.mkdir(parents=True, exist_ok=True)
+    html_abs = html_path.resolve()
+    pdf_abs = pdf_path.resolve()
+
+    # Cách 1: Gọi trực tiếp Microsoft Edge (msedge.exe) hoặc Chrome có sẵn trên Windows 11
+    browser_bin = _find_chromium_binary()
+    if browser_bin:
+        user_data_dir = tempfile.mkdtemp(prefix="lab04_edge_pdf_")
+        try:
+            for headless_flag in ("--headless=new", "--headless"):
+                cmd = [
+                    browser_bin,
+                    headless_flag,
+                    "--disable-gpu",
+                    "--no-sandbox",
+                    "--no-pdf-header-footer",
+                    "--print-to-pdf-no-header",
+                    f"--user-data-dir={user_data_dir}",
+                    f"--print-to-pdf={pdf_abs}",
+                    html_abs.as_uri(),
+                ]
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=45, check=False)
+                if pdf_abs.exists() and pdf_abs.stat().st_size > 1000:
+                    return True
+        except Exception:
+            pass
+        finally:
+            shutil.rmtree(user_data_dir, ignore_errors=True)
+
+    # Cách 2: Dự phòng qua Selenium CDP (nếu máy có cài selenium)
+    try:
+        import time
+        from selenium import webdriver
+        from selenium.webdriver.chrome import options as chrome_options
+
+        user_data_dir = tempfile.mkdtemp(prefix="lab04_pdf_")
+        try:
+            opts = chrome_options.Options()
+            opts.add_argument("--headless=new")
+            opts.add_argument("--no-sandbox")
+            opts.add_argument("--disable-dev-shm-usage")
+            opts.add_argument(f"--user-data-dir={user_data_dir}")
+            driver = webdriver.Chrome(options=opts)
+            try:
+                driver.get(html_abs.as_uri())
+                time.sleep(1.0)
+                res = driver.execute_cdp_cmd(
+                    "Page.printToPDF",
+                    {"printBackground": True, "preferCSSPageSize": True},
+                )
+                if res and "data" in res:
+                    pdf_abs.write_bytes(base64.b64decode(res["data"]))
+                    if pdf_abs.exists() and pdf_abs.stat().st_size > 1000:
+                        return True
+            finally:
+                driver.quit()
+        finally:
+            shutil.rmtree(user_data_dir, ignore_errors=True)
+    except Exception:
+        pass
 
 if __name__ == "__main__":
     render_html()

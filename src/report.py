@@ -298,17 +298,25 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
     print("\n" + "=" * 65)
     print("BƯỚC 6: TỔNG HỢP BÁO CÁO THỰC NGHIỆM (UTH REPORT ENGINE)")
     print("=" * 65)
+    pdf_out_path = REPORT_DIR / "LAB_04_REPORT.pdf"
+    run_pdf_path = REPORT_DIR / f"report_{active_run_id}.pdf"
     print(f"[DONE] Đã lưu báo cáo tổng hợp : {summary_md_path.relative_to(ROOT_DIR)}")
     print(f"[DONE] Đã lưu báo cáo chuẩn UTH: {docs_md_path.relative_to(ROOT_DIR)}")
     print(f"[DONE] Đã lưu báo cáo HTML UTH : {html_out_path.relative_to(ROOT_DIR)}")
     print(f"[DONE] Đã lưu báo cáo HTML Run : {run_html_path.relative_to(ROOT_DIR)}")
+    if pdf_out_path.exists():
+        print(f"[DONE] Đã lưu báo cáo PDF UTH  : {pdf_out_path.relative_to(ROOT_DIR)}")
+    if run_pdf_path.exists():
+        print(f"[DONE] Đã lưu báo cáo PDF Run  : {run_pdf_path.relative_to(ROOT_DIR)}")
 
     output_payload = {
         "experiment_summary_md": "reports/experiment_summary.md",
         "lab_04_report_md": "docs/LAB_04_REPORT.md",
         "lab_04_report_html": "reports/LAB_04_REPORT.html",
+        "lab_04_report_pdf": "reports/LAB_04_REPORT.pdf",
         "run_report_md": f"reports/report_{active_run_id}.md",
         "run_report_html": f"reports/report_{active_run_id}.html",
+        "run_report_pdf": f"reports/report_{active_run_id}.pdf",
         "duration_seconds": duration,
     }
     update_progress(active_run_id, "REPORTING", "SUCCESS", output_data=output_payload)
@@ -318,3 +326,4 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     main()
+    
