@@ -86,29 +86,25 @@ Khi toàn bộ không gian được chia thành $M$ vùng lá $R_1, R_2, \dots, 
 
 $$\hat{f}(\mathbf{x}) = \sum_{m=1}^{M} c_m \mathbb{I}(\mathbf{x} \in R_m), \qquad c_m = \frac{1}{|R_m|}\sum_{i \in R_m} y_i$$
 
-## 4. Evaluation Metrics — Các chỉ số đánh giá thực nghiệm
-
-Kết quả đánh giá chính thức của `Decision Tree Regression` trên tập Kiểm tra (`102` mẫu — khớp 100% với **Cells 14, 16, 17 & 19 của `lab04.ipynb`**):
-
+## 4. Evaluation metrics
 | Metric | Giá trị trên Tập Test (`102` mẫu) | Giá trị trên Tập Train (`404` mẫu) | Nhận xét & Đối chiếu với `MLP Regression` |
-|---|---:|---:|---|
-| **MSE (↓)** | **`10.5431` (Best)** | `5.4820` | Đạt MSE thấp nhất nhờ bắt trúng các ngưỡng nhảy giá theo `RM` và `LSTAT`, hạn chế được sai số cực đại |
-| **RMSE (↓)** | **`$3.2470k` (Best)** | `$2.3414k` | Nhỉnh hơn một chút so với `Random Forest` (`$3.3942k`) và `MLP Regression` (`$3.4004k`) |
-| **MAE (↓)** | **`$2.5192k`** | `$1.7125k` | **Kém hơn `MLP Regression` (`$2.3160k`)** và `Random Forest` (`$2.0994k`) do dự đoán bậc thang rời rạc |
-| **MAPE (↓)** | **`13.8809%` (`13.88%`)** | `8.6412%` | **Kém hơn `MLP Regression` (`12.22%`)** tới `1.66` điểm phần trăm và kém hơn `Random Forest` (`10.82%`) |
-| **$R^2$ Score (↑)** | **`0.8562` (`85.62%` — Best)** | `0.9369` | Giải thích được `85.62%` phương sai trên tập Test |
-| **Max_Error (↓)** | **`$10.6500k` (Best)** | `$10.2500k` | Sai số cực đại thấp nhất trong 4 mô hình |
-| **Within $\pm\$3,000\text{ USD}$ (↑)** | **`68.63%`** | — | **Thấp hơn `MLP Regression` (`72.55%`)** và `Random Forest` (`81.37%`) |
-| **Training / Prediction Time** | **`0.0071s` (Best)** / `0.000574s` | — | Huấn luyện nhanh nhất trong cả 4 mô hình |
+| :--- | :---: | :---: | :--- |
+| **MSE (↓)** | **`10.5431` (Best Hold-out)** | `6.6944` | Đạt MSE thấp nhất trên phép chia Hold-out `random_state=42` nhờ kiểm soát tốt `Max_Error` (`10.65`) |
+| **RMSE (↓)** | **`$3.2470k` (Best Hold-out)** | `$2.5874k` | Nhỉnh hơn trên 102 mẫu Test nhưng kém ổn định khi đổi tập chia |
+| **MAE (↓)** | **`$2.5192k`** | `$1.9563k` | **Kém hơn `MLP Regression` (`$2.2868k`)** và `Random Forest` (`$2.0994k`) do dự đoán bậc thang rời rạc |
+| **MAPE (↓)** | **`13.8809%` (`13.88%`)** | `9.6020%` | **Kém hơn `MLP Regression` (`11.71%`)** tới `2.17` điểm phần trăm và kém hơn `Random Forest` (`10.82%`) |
+| **$R^2$ Score (↑)** | **`0.8562` (`85.62%`)** | `0.9229` | Giải thích `85.62%` phương sai trên tập Hold-out Test |
+| **5-Fold Cross-Validation** | `CV MSE = 18.3829 ± 11.6161` | `CV R² = 0.7832 ± 0.1212` | **Phương sai rất lớn Across Folds** — kém xa `MLP Regression` (`CV R² = 0.8607 ± 0.0459`) |
+| **Within $\pm\$3,000	ext{ USD}$ (↑)** | **`68.63%`** | — | **Thấp hơn `MLP Regression` (`75.49%`)** và `Random Forest` (`81.37%`) |
+| **TrainingTime** | **`0.0047s`** | — | Tốc độ huấn luyện rất nhanh trên dữ liệu bảng nhỏ |
 
-> **Phân tích học thuật quan trọng (Cell 14 & Cell 17 `lab04.ipynb`):** Tại sao `Decision Tree` có `MSE` thấp nhất (`10.5431`) nhưng `MAE` (`2.5192`) và `MAPE` (`13.88%`) lại kém hơn `MLP Regression` (`MAE = 2.3160`, `MAPE = 12.22%`)? Vì `MSE` bình phương sai số nên rất nhạy với 1–2 điểm ngoại lai (`Max_Error` của Decision Tree chỉ là `10.65`, trong khi các mô hình khác có 1 căn nhà dị biệt lệch ~`20k`). Ngược lại, trên đa số các căn nhà thông thường trong tập Test, bề mặt dự đoán liên tục và trơn tru của **`MLP Regression` bám sát giá thực tế hơn**, giúp `MLP` thắng `Decision Tree` cả về `MAE`, `MAPE (%)` lẫn tỷ lệ dự đoán trong biên độ $\pm\$3,000\text{ USD}$ (`72.55%` vs `68.63%`).
+> **Phân tích học thuật quan trọng:** Trên phép chia Hold-out đơn lẻ (`random_state=42`), `Decision Tree` có `MSE` thấp (`10.5431`) nhưng `MAE` (`2.5192`) và `MAPE` (`13.88%`) đều kém hơn `MLP Regression` (`MAE = 2.2868`, `MAPE = 11.71%`). Đặc biệt, khi kiểm định bằng **5-Fold Cross-Validation**, `Decision Tree` tụt xuống hạng 3 với `CV MSE = 18.3829 ± 11.6161` (`CV R² = 0.7832`), chứng minh một cây đơn lẻ rất nhạy với cách chia dữ liệu, trong khi **`MLP Regression` ổn định và dẫn đầu 5-Fold CV (`CV R² = 0.8607 ± 0.0459`)**.
 
-## 5. Used Data — Dữ liệu sử dụng
-
+## 5. Used data
 | Tập dữ liệu | Số mẫu | Kích thước | Vai trò đối với `Decision Tree Regression` |
-|---|---:|---|---|
-| `X_train_scaled`, `y_train` | `404` | `(404, 13)` | Dùng để tìm các ngưỡng phân nhánh $(j, t)$ và tính giá trị trung bình tại các nút lá |
-| `X_test_scaled`, `y_test` | `102` | `(102, 13)` | Dùng để đánh giá độc lập 5 chỉ số hồi quy trên dữ liệu chưa từng thấy |
+| :--- | :---: | :---: | :--- |
+| `X_train_scaled`, `y_train` | `404` | `(404, 13)` | Tìm các ngưỡng phân nhánh $(j, t)$, tính giá trị trung bình tại `34` nút lá và đánh giá 5-Fold CV |
+| `X_test_scaled`, `y_test` | `102` | `(102, 13)` | Đánh giá độc lập 5 chỉ số hồi quy trên dữ liệu chưa từng thấy |
 
 ## Code References
 

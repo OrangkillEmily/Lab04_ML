@@ -30,14 +30,14 @@ import numpy as np
 
 try:
     import tensorflow as tf
+    from keras import regularizers
     from keras.callbacks import EarlyStopping
-    from keras.layers import Dense, Input
+    from keras.layers import Dense, Dropout, Input
     from keras.models import Sequential, load_model as keras_load_model
     from keras.optimizers import Adam
     HAS_TENSORFLOW = True
 except ImportError:
     HAS_TENSORFLOW = False
-
 try:
     from sklearn.ensemble import RandomForestRegressor as SklearnRandomForestRegressor
     from sklearn.linear_model import LinearRegression as SklearnLinearRegression
@@ -423,21 +423,29 @@ def build_mlp_model(
         ],
     )
     output_cfg = mlp_cfg.get("output_layer", {"units": 1, "activation": "linear", "name": "output_layer"})
+            
     learning_rate = float(mlp_cfg.get("learning_rate", 0.005))
+    l2_lambda = float(mlp_cfg.get("l2_lambda", 0.0))
+    dropout_rate = float(mlp_cfg.get("dropout_rate", 0.0))
     loss_fn = str(mlp_cfg.get("loss", "mean_squared_error"))
     metrics_list = list(mlp_cfg.get("metrics", ["mae", "mape"]))
     random_state = int((config or {}).get("data", {}).get("random_state", 42))
 
     if HAS_TENSORFLOW:
+        reg = regularizers.l2(l2_lambda) if l2_lambda > 0.0 else None
         layers = [Input(shape=(int(input_dim),), name="input_layer")]
         for idx, layer_info in enumerate(hidden_layers_cfg, start=1):
             layers.append(
                 Dense(
                     units=int(layer_info.get("units", 32)),
                     activation=str(layer_info.get("activation", "relu")),
+                    kernel_regularizer=reg,
                     name=str(layer_info.get("name", f"hidden_layer_{idx}")),
                 )
             )
+            if dropout_rate > 0.0:
+                layers.append(Dropout(rate=dropout_rate, name=f"dropout_{idx}"))
+                
         layers.append(
             Dense(
                 units=int(output_cfg.get("units", 1)),
@@ -690,8 +698,16 @@ class RandomForestRegressorCompat:
         rng = np.random.RandomState(self.random_state)
         self.estimators_ = []
         importances_sum = np.zeros(n_features, dtype=np.float64)
-        effective_max_features = max(1, int(round(n_features * 0.7))) if self.max_features == "sqrt" else self.max_features
-
+        
+        if self.max_features == "sqrt":
+            effective_max_features = max(1, int(np.sqrt(n_features)))
+        elif self.max_features == "log2":
+            effective_max_features = max(1, int(np.log2(n_features)))
+        elif isinstance(self.max_features, float):
+            effective_max_features = max(1, int(self.max_features * n_features))
+        else:
+            effective_max_features = self.max_features
+            
         for idx in range(self.n_estimators):
             tree_seed = int(rng.randint(0, 10_000_000))
             boot_indices = rng.choice(n_samples, size=n_samples, replace=True)

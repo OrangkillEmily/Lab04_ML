@@ -86,26 +86,23 @@ $$\text{Var}\left(\hat{f}_{\text{RF}}(\mathbf{x})\right) = \rho\sigma^2 + \frac{
 
 Nhờ $B = 100$ lớn và $\rho$ nhỏ (do `max_features = 'sqrt'`), sai số tuyệt đối trung bình (`MAE`) và sai số phần trăm (`MAPE`) giảm mạnh.
 
-## 4. Evaluation Metrics — Các chỉ số đánh giá thực nghiệm
 
-Kết quả đánh giá chính thức của `Random Forest Regression` trên tập Kiểm tra (`102` mẫu — khớp 100% với **Cells 15, 16, 17 & 19 của `lab04.ipynb`**):
-
+## 4. Evaluation metrics
 | Metric | Giá trị trên Tập Test (`102` mẫu) | Giá trị trên Tập Train (`404` mẫu) | Nhận xét & Đối chiếu với `MLP Regression` |
-|---|---:|---:|---|
-| **MSE (↓)** | **`11.5205`** | `2.6512` | Tương đương sát sao với `MLP Regression` (`11.5628`, chỉ chênh `0.0423`) |
-| **RMSE (↓)** | **`$3.3942k`** | `$1.6283k` | Tương đương với `MLP Regression` (`$3.4004k`, chỉ chênh `$6 USD`) |
-| **MAE (↓)** | **`$2.0994k` (`~$2,099 USD` — Best)** | `$1.0742k` | Đạt sai số tuyệt đối trung bình thấp nhất toàn bảng (kế tiếp là MLP với `$2.3160k`) |
-| **MAPE (↓)** | **`10.8235%` (`10.82%` — Best)** | `5.3815%` | Đạt sai số phần trăm trung bình thấp nhất toàn bảng (kế tiếp là MLP với `12.22%`) |
-| **$R^2$ Score (↑)** | **`0.8429` (`84.29%`)** | `0.9695` | Giải thích `84.29%` phương sai giá nhà (ngang ngửa với `MLP Regression` `84.23%`) |
-| **Median Residual** | **`-0.0764` (Best)** | — | Trung vị phần dư cực kỳ sát `0` |
-| **Within $\pm\$3,000\text{ USD}$ (↑)** | **`81.37%` (Best)** | — | Đạt tỷ lệ dự đoán chính xác trong biên độ $\pm\$3,000$ cao nhất (`81.37%`) |
-| **Training / Prediction Time** | `0.1577s` / `0.013978s` | — | Chậm hơn `Linear` và `Decision Tree` khoảng 20 lần do phải duyệt qua 100 cây |
+| :--- | :---: | :---: | :--- |
+| **MSE (↓)** | **`11.5205`** | `4.1200` | Cạnh tranh sát sao với `MLP Regression` (`12.5605` ở cấu hình chuẩn và `10.0503` ở `MLP_Deep`) |
+| **RMSE (↓)** | **`$3.3942k`** | `$2.0298k` | Sai số toàn phương trung bình căn bậc hai thấp và ổn định |
+| **MAE (↓)** | **`$2.0994k` (`~$2,099 USD` — Best)** | `$1.4162k` | Đạt sai số tuyệt đối trung bình thấp nhất trên tập Hold-out Test (kế tiếp là MLP với `$2.2868k`) |
+| **MAPE (↓)** | **`10.8235%` (`10.82%` — Best)** | `6.6300%` | Đạt sai số phần trăm trung bình thấp nhất trên tập Hold-out Test (kế tiếp là MLP với `11.71%`) |
+| **$R^2$ Score (↑)** | **`0.8429` (`84.29%`)** | `0.9526` | Giải thích `84.29%` phương sai giá nhà |
+| **5-Fold Cross-Validation** | `CV MSE = 12.5518 ± 1.9864` | `CV R² = 0.8459 ± 0.0395` | Đứng Hạng #2 trên 5-Fold CV, sau **`MLP Regression` (`CV R² = 0.8607 ± 0.0459`)** |
+| **Within $\pm\$3,000	ext{ USD}$ (↑)** | **`81.37%` (Best)** | — | Tỷ lệ dự đoán chính xác trong biên độ $\pm\$3,000$ đạt `81.37%` |
+| **Training Time** | `0.1289s` | — | Nhanh hơn mạng MLP nhưng chậm hơn `Linear` và `Decision Tree` khoảng 30–80 lần |
 
-## 5. Used Data — Dữ liệu sử dụng
-
+## 5. Used data
 | Tập dữ liệu | Số mẫu | Kích thước | Vai trò đối với `Random Forest Regression` |
-|---|---:|---|---|
-| `X_train_scaled`, `y_train` | `404` | `(404, 13)` | Rút 100 mẫu Bootstrap để huấn luyện 100 cây quyết định độc lập |
+| :--- | :---: | :---: | :--- |
+| `X_train_scaled`, `y_train` | `404` | `(404, 13)` | Rút 100 mẫu Bootstrap để huấn luyện 100 cây quyết định độc lập và đánh giá 5-Fold CV |
 | `X_test_scaled`, `y_test` | `102` | `(102, 13)` | Đánh giá độc lập 5 chỉ số hồi quy và phân tích phần dư trên dữ liệu kiểm thử |
 
 ## Code References

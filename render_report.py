@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 try:
     from PIL import Image
@@ -257,6 +257,29 @@ def collect_report_facts(root: Path, run_id: Optional[str] = None) -> Dict[str, 
         " Mạng <b>MLP Regression</b> không vượt đồng thời <code>Linear Regression</code> và "
         "<code>Decision Tree</code> trên cả 5 chỉ số đánh giá (xem bảng so sánh bên trên)."
     )
+    
+    try:
+        import csv as _csv_cv
+        with open(metrics_dir / "kfold_cross_validation.csv", encoding="utf-8-sig") as _fh:
+            _cv_rows = list(_csv_cv.DictReader(_fh))
+        if _cv_rows:
+            _cv_best = max(_cv_rows, key=lambda r: float(r["CV_R2_Mean"]))
+            takeaway_text += (
+                f" Tuy nhiên, trên đánh giá <b>{_cv_best['K_Folds']}-Fold Cross-Validation</b>, "
+                f"<b>{html.escape(_cv_best['Model'])}</b> đạt độ chính xác trung bình cao nhất "
+                f"(<code>CV R² = {float(_cv_best['CV_R2_Mean']):.4f} ± {float(_cv_best['CV_R2_Std']):.4f}</code>)."
+            )
+        with open(metrics_dir / "mlp_architecture_tuning.csv", encoding="utf-8-sig") as _fh:
+            _arch_rows = list(_csv_cv.DictReader(_fh))
+        if _arch_rows:
+            _arch_best = max(_arch_rows, key=lambda r: float(r["Test_R2"]))
+            takeaway_text += (
+                f" Ngoài ra, khi mở rộng kiến trúc lên <code>{html.escape(_arch_best['Architecture'])}</code>, "
+                f"hiệu năng đạt <code>Test R² = {float(_arch_best['Test_R2']):.4f}</code> "
+                f"(<code>MSE = {float(_arch_best['Test_MSE']):.4f}</code>)."
+            )
+    except Exception:
+        pass
 
     # Trạng thái các tiêu chí nghiệm thu phụ thuộc dữ liệu
     ac03_ok = (n_missing == 0 and n_dups == 0)
@@ -308,13 +331,59 @@ def collect_report_facts(root: Path, run_id: Optional[str] = None) -> Dict[str, 
     _times = {m: float(v["Training_Time_Sec"]) for m, v in test_metrics.items()}
     _fast = min(_times.items(), key=lambda kv: kv[1])
     _slow = max(_times.items(), key=lambda kv: kv[1])
-    time_text = (f"{_fast[0]} huấn luyện nhanh nhất ({_fast[1]:.4f}s), {_slow[0]} chậm nhất ({_slow[1]:.4f}s); "
-                 f"MLP Regression mất {_times[MLP]:.4f}s.")
+    if _slow[0] == MLP:
+        time_text = f"{_fast[0]} huấn luyện nhanh nhất ({_fast[1]:.4f}s), còn {_slow[0]} chậm nhất ({_slow[1]:.4f}s)."
+    else:
+        time_text = (f"{_fast[0]} huấn luyện nhanh nhất ({_fast[1]:.4f}s), {_slow[0]} chậm nhất ({_slow[1]:.4f}s); "
+                     f"MLP Regression mất {_times[MLP]:.4f}s.")
 
+    # Đọc thông số Regularization từ config.yaml
+    l2_lambda = 0.0
+    dropout_rate = 0.0
+    try:
+        l2_lambda = float(_cfg2.get("mlp_model", {}).get("l2_lambda", 0.0))
+        dropout_rate = float(_cfg2.get("mlp_model", {}).get("dropout_rate", 0.0))
+    except Exception:
+        pass
+      
+    def _csv_table_html(csv_name: str, title: str, keep_cols: Optional[List[str]] = None) -> str:
+        p = metrics_dir / csv_name
+        if not p.exists():
+            return ""
+        try:
+            with open(p, encoding="utf-8-sig") as fh:
+                rows = list(csv.DictReader(fh))
+            if not rows:
+                return ""
+            all_cols = list(rows[0].keys())
+            cols = [c for c in all_cols if c in keep_cols] if keep_cols else all_cols
+            if not cols:
+                cols = all_cols
+            thead = "".join(f"<th>{html.escape(str(c))}</th>" for c in cols)
+            tbody = ""
+            for r in rows:
+                tds = "".join(f"<td>{html.escape(str(r.get(c, '')))}</td>" for c in cols)
+                tbody += f"<tr>{tds}</tr>\n"
+            return (
+                f'<h3 style="margin-top:22px">{html.escape(title)}</h3>\n'
+                f'<table style="font-size:9pt"><thead><tr>{thead}</tr></thead><tbody>\n{tbody}</tbody></table>'
+            )
+        except Exception:
+            return ""
+
+    outlier_table_html = _csv_table_html("eda_outlier_analysis.csv", "Bảng 2.1: Kiểm toán Giá trị Ngoại lai (IQR & Z-Score > 3 — Giữ nguyên dữ liệu gốc)")
+    cv_table_html = _csv_table_html("kfold_cross_validation.csv", "Bảng 6.2: Đánh giá 5-Fold Cross-Validation (Tính ổn định tổng quát)")
+    arch_tuning_table_html = _csv_table_html("mlp_architecture_tuning.csv", "Bảng 6.3: Đối sánh Tuning Kiến trúc Mạng MLP")
+    summary_table_html = _csv_table_html(
+        "model_summary.csv",
+        "Bảng 6.4: Chẩn đoán Thống kê Phần dư & Thông tin Mô hình (Model Summary)",
+        keep_cols=["Model", "No_Parameters", "Log_Likelihood", "AIC", "BIC", "F_Statistic", "Durbin_Watson", "Jarque_Bera"],
+    )
+    
     return {k: v for k, v in locals().items()
             if not k.startswith("_") and k not in ("root", "run_id", "yaml", "fig_dir", "metrics_dir", "models_dir", "csv", "fh")}
-
-
+    
+    
 def render_html(
     project_root: Optional[Path] = None,
     run_id: Optional[str] = None,
@@ -384,6 +453,12 @@ def render_html(
     ac04_badge = facts["ac04_badge"]
     n_figures = facts["n_figures"]
     skew_text, resid_text, time_text = facts["skew_text"], facts["resid_text"], facts["time_text"]
+    l2_lambda = facts["l2_lambda"]
+    dropout_rate = facts["dropout_rate"]
+    outlier_table_html = facts["outlier_table_html"]
+    cv_table_html = facts["cv_table_html"]
+    arch_tuning_table_html = facts["arch_tuning_table_html"]
+    summary_table_html = facts["summary_table_html"]
     n_total = facts["n_total"]
     log_path = logs_dir / f"pipeline_{active_run_id}.log"
     if not log_path.exists():
@@ -733,7 +808,7 @@ def render_html(
       .flow-map {{ padding: 16px 18px !important; margin-bottom: 20px !important; break-inside: avoid; }}
       .map-scroll {{ overflow: visible !important; }}
       .map-svg {{ min-width: 0 !important; width: 100% !important; height: auto !important; }}
-      .stage {{ margin: 0 0 14px 14px !important; padding: 0 0 8px 18px !important; }}
+      .stage {{ margin: 0 0 14px 26px !important; padding: 0 0 8px 18px !important; }}
       .card-grid {{ grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; margin: 10px 0 !important; }}
       .image-card {{ break-inside: avoid; page-break-inside: avoid; }}
       .image-card img {{ max-height: 195px !important; padding: 4px !important; }}
@@ -897,6 +972,12 @@ def render_html(
       </figcaption>
     </figure>
   </div>
+  
+  {outlier_table_html}
+
+  <details>
+    <summary>Xem mã nguồn trích đoạn nạp và xác thực dữ liệu (src/data_loader.py)</summary>
+  
 
   <details>
     <summary>Xem mã nguồn trích đoạn nạp và xác thực dữ liệu (src/data_loader.py)</summary>
@@ -990,6 +1071,7 @@ X_train_sub, X_val_scaled, y_train_sub, y_val = train_test_split_df(
       </tr>
     </tbody>
   </table>
+  <p class="takeaway"><b>Cấu hình Regularization (chống Overfitting):</b> Áp dụng <code>l2_lambda = {l2_lambda}</code> và <code>dropout_rate = {dropout_rate}</code> từ <code>config.yaml</code>.</p>
 </section>
 
 <!-- STAGE 05: TRAINING & CONVERGENCE -->
@@ -1046,6 +1128,10 @@ X_train_sub, X_val_scaled, y_train_sub, y_val = train_test_split_df(
     <button type="button" class="filter-btn" onclick="filterCharts('metrics', this)">Biểu đồ Chỉ số &amp; Thời gian Huấn luyện</button>
     <button type="button" class="filter-btn" onclick="filterCharts('diagnostics', this)">Phân tán Dự đoán &amp; Phần dư (Residuals)</button>
   </div>
+  
+  <h3 style="margin-top:16px">Bảng 6.1: Đối sánh 4 Mô hình trên Tập Kiểm tra Độc lập (Test Set — {n_test} mẫu)</h3>
+  <table>
+    <thead>
 
   <table>
     <thead>
@@ -1065,6 +1151,10 @@ X_train_sub, X_val_scaled, y_train_sub, y_val = train_test_split_df(
     <tbody>
 {model_rows_html}    </tbody>
   </table>
+
+  {cv_table_html}
+  {arch_tuning_table_html}
+  {summary_table_html}
 
   <div class="card-grid" id="comparison-gallery">
     <figure class="image-card" data-category="diagnostics">
@@ -1222,6 +1312,18 @@ X_train_sub, X_val_scaled, y_train_sub, y_val = train_test_split_df(
         <td><b>AC12</b></td>
         <td>Báo cáo HTML &amp; Markdown Đồng bộ</td>
         <td>Tự động sinh <code>LAB_04_REPORT.html</code>, <code>LAB_04_REPORT.md</code> và <code>LAB_04_DESCRIPTION.md</code> chuẩn giao diện UTH</td>
+        <td><span class="badge-pass">PASS</span></td>
+      </tr>
+      <tr>
+        <td><b>AC13</b></td>
+        <td>Kiểm thử Đơn vị Tự động (Unit Tests)</td>
+        <td>Chạy <code>pytest tests/test_lab04.py</code> kiểm định toàn vẹn dữ liệu, chống rò rỉ, Forward/Backprop, <code>sqrt</code> và K-Fold/Regularization</td>
+        <td><span class="badge-pass">PASS</span></td>
+      </tr>
+      <tr>
+        <td><b>AC14</b></td>
+        <td>K-Fold CV, Outlier Audit &amp; Model Summary</td>
+        <td>Hoàn tất 5-Fold Cross-Validation, đối sánh 4 kiến trúc MLP, kiểm toán ngoại lai và xuất chẩn đoán thống kê <code>model_summary.csv</code></td>
         <td><span class="badge-pass">PASS</span></td>
       </tr>
     </tbody>

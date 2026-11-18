@@ -369,6 +369,10 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
         saved_figures.extend(plot_residual_distributions(y_test, test_predictions, stage_dir=stage_fig_dir))
         saved_figures.extend(plot_metric_comparison_bars(test_metrics_by_model, stage_dir=stage_fig_dir))
 
+        # Tự động trích xuất báo cáo thống kê chuyên sâu model_summary cho cả 4 mô hình
+        from src import model_summary
+        summary_files = model_summary.main(run_id=run_id)
+
         eval_payload = {
             "run_id": run_id,
             "test_samples": int(len(y_test)),

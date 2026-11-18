@@ -103,6 +103,8 @@ def run_pipeline(
             step_outputs[step_name] = step_fn(active_run_id)
             completed_steps.append(step_name)
 
+        
+        step_outputs["REPORTING"] = report.main(active_run_id)
         completed_steps.append("REPORTING")
         total_elapsed = round(time.perf_counter() - pipeline_start, 4)
 
@@ -117,10 +119,6 @@ def run_pipeline(
 
         update_progress(active_run_id, "PIPELINE", "SUCCESS", output_data=pipeline_summary)
         write_log(active_run_id, "PIPELINE", "SUCCESS", f"Pipeline LAB04 hoàn tất thành công trong {total_elapsed}s.")
-        finish_run(active_run_id, status="SUCCESS", summary_data=pipeline_summary)
-
-        # Xuất báo cáo sau khi trạng thái SUCCESS và end_time đã được cập nhật
-        step_outputs["REPORTING"] = report.main(active_run_id)
         finish_run(active_run_id, status="SUCCESS", summary_data=pipeline_summary)
 
         print("\n" + "#" * 68)

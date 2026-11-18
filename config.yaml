@@ -54,6 +54,8 @@ mlp_model:
     name: "output_layer"
   optimizer: "adam"
   learning_rate: 0.005
+  l2_lambda: 0.001
+  dropout_rate: 0.05
   beta_1: 0.9
   beta_2: 0.999
   epsilon: 1.0e-7
@@ -102,3 +104,17 @@ logging:
   level: "INFO"
   encoding: "utf-8"
   figure_dpi: 300
+
+tuning_and_cv:
+  enabled: true
+  k_folds: 5
+  cv_epochs: 80
+  candidate_architectures:
+    - name: "MLP_Small (13->16->8->1)"
+      hidden_units: [16, 8]
+    - name: "MLP_Baseline (13->32->16->1)"
+      hidden_units: [32, 16]
+    - name: "MLP_Wide (13->64->32->1)"
+      hidden_units: [64, 32]
+    - name: "MLP_Deep (13->64->32->16->1)"
+      hidden_units: [64, 32, 16]

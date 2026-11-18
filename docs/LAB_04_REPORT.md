@@ -2,7 +2,7 @@
 
 - **Học phần:** Học máy (Machine Learning) – Trường Đại học Giao thông Vận tải TP.HCM (UTH)
 - **Chủ đề:** Chương 5 – Mạng Nơ-ron Nhân tạo (Artificial Neural Networks – Practice Exercise 4: Predicting House Prices)
-- **Phiên thực nghiệm (Run ID):** `20261113_170159_ef05f8` (Trạng thái: **SUCCESS**)
+- **Phiên thực nghiệm (Run ID):** `20261119_001229_43dcff` (Trạng thái: **RUNNING**)
 - **Bộ dữ liệu chuẩn:** Boston Housing Dataset (`data/raw/boston_housing.csv` – 506 mẫu, 13 đặc trưng, biến mục tiêu `MEDV` đơn vị `$1,000 USD`)
 
 ## 1. Mục tiêu bài thực hành
@@ -78,21 +78,68 @@ $$\text{MAPE (\%)} = \frac{100\%}{N}\sum_{i=1}^{N}\left|\frac{y_i - \hat{y}_i}{y
 - Bộ `StandardScaler` chỉ `fit` trên `404` mẫu `Train` (`leakage_free = True`), sau đó tách `X_train_sub` (`323` mẫu) và `X_val_scaled` (`81` mẫu).
 
 ### 5.3. Huấn luyện MLP Regression & Hội tụ EarlyStopping
-- Đã chạy `85` epochs (`batch_size = 32`, `Adam lr = 0.005`).
-- **Train MSE (Loss):** Giảm từ `590.3776` (Epoch 1) xuống `4.6031` (Epoch 85).
-- **Epoch kiểm định tốt nhất (Best Validation Epoch):** Epoch `70` (`Best Val MSE = 14.0107`, `Best Val MAE = 2.7173`).
-- **Nhận xét Train vs Validation:** Tại Epoch 70, Train MSE = 5.2718 còn Val MSE = 14.0107 (chênh lệch 2.7 lần) — có khoảng cách tổng quát hóa giữa Train và Validation; EarlyStopping giữ lại trọng số tại cực tiểu kiểm định (Epoch 70).
+- Đã chạy `100` epochs (`batch_size = 32`, `Adam lr = 0.005`).
+- **Train MSE (Loss):** Giảm từ `578.2240` (Epoch 1) xuống `12.1656` (Epoch 100).
+- **Epoch kiểm định tốt nhất (Best Validation Epoch):** Epoch `91` (`Best Val MSE = 14.0724`, `Best Val MAE = 2.6805`).
+- **Nhận xét Train vs Validation:** Hai đường Train và Validation bám sát nhau (tại Epoch 91: Train MSE = 11.7010, Val MSE = 14.0724), không có dấu hiệu Overfitting rõ rệt.
 
 ### 5.4. Đối sánh thực nghiệm 4 mô hình trên Tập Kiểm tra (`Test Set` — 102 mẫu)
 
 | Mô hình (Model) | Test MSE (↓) | Test RMSE (↓) | Test MAE (↓) | Test MAPE (↓) | Test R² (↑) | Train MSE | Train MAPE | Train R² | Thời gian Train (s) |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **MLP Regression** | 11.5628 | 3.4004 | 2.3160 | 12.22% | 0.8423 | 6.8245 | 9.62% | 0.9214 | 15.7892s |
-| **Linear Regression** | 24.2911 | 4.9286 | 3.1891 | 16.87% | 0.6688 | 21.6414 | 16.57% | 0.7509 | 0.0083s |
-| **Decision Tree** | 10.5431 | 3.2470 | 2.5192 | 13.88% | 0.8562 | 6.6944 | 9.60% | 0.9229 | 0.0071s |
-| **Random Forest** | 11.5205 | 3.3942 | 2.0994 | 10.82% | 0.8429 | 4.1200 | 6.63% | 0.9526 | 0.1577s |
+| **MLP Regression** | 12.5605 | 3.5441 | 2.2868 | 11.71% | 0.8287 | 7.1522 | 9.53% | 0.9177 | 14.3336s |
+| **Linear Regression** | 24.2911 | 4.9286 | 3.1891 | 16.87% | 0.6688 | 21.6414 | 16.57% | 0.7509 | 0.0015s |
+| **Decision Tree** | 10.5431 | 3.2470 | 2.5192 | 13.88% | 0.8562 | 6.6944 | 9.60% | 0.9229 | 0.0037s |
+| **Random Forest** | 11.5205 | 3.3942 | 2.0994 | 10.82% | 0.8429 | 4.1200 | 6.63% | 0.9526 | 0.1361s |
 
 - **Mô hình tốt nhất theo Test R²:** `Decision Tree` (`R² = 0.8562`, `MSE = 10.5431`, `MAPE = 13.88%`).
+- **Regularization MLP:** `l2_lambda = 0.001`, `dropout_rate = 0.05`.
+
+#### Kiểm toán Giá trị Ngoại lai (EDA Outlier Analysis)
+
+| Feature | Q1 | Q3 | IQR | Lower_Bound | Upper_Bound | IQR_Outlier_Count | IQR_Outlier_Pct | ZScore_gt3_Count |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| CRIM | 0.082 | 3.6771 | 3.595 | -5.3105 | 9.0696 | 66 | 13.04 | 8 |
+| ZN | 0.0 | 12.5 | 12.5 | -18.75 | 31.25 | 68 | 13.44 | 14 |
+| INDUS | 5.19 | 18.1 | 12.91 | -14.175 | 37.465 | 0 | 0.0 | 0 |
+| CHAS | 0.0 | 0.0 | 0.0 | 0.0 | 0.0 | 35 | 6.92 | 35 |
+| NOX | 0.449 | 0.624 | 0.175 | 0.1865 | 0.8865 | 0 | 0.0 | 0 |
+| RM | 5.8855 | 6.6235 | 0.738 | 4.7785 | 7.7305 | 30 | 5.93 | 8 |
+| AGE | 45.025 | 94.075 | 49.05 | -28.55 | 167.65 | 0 | 0.0 | 0 |
+| DIS | 2.1002 | 5.1884 | 3.0883 | -2.5322 | 9.8208 | 5 | 0.99 | 5 |
+| RAD | 4.0 | 24.0 | 20.0 | -26.0 | 54.0 | 0 | 0.0 | 0 |
+| TAX | 279.0 | 666.0 | 387.0 | -301.5 | 1246.5 | 0 | 0.0 | 0 |
+| PTRATIO | 17.4 | 20.2 | 2.8 | 13.2 | 24.4 | 15 | 2.96 | 0 |
+| B | 375.3775 | 396.225 | 20.8475 | 344.1062 | 427.4963 | 77 | 15.22 | 25 |
+| LSTAT | 6.95 | 16.955 | 10.005 | -8.0575 | 31.9625 | 7 | 1.38 | 5 |
+| MEDV | 17.025 | 25.0 | 7.975 | 5.0625 | 36.9625 | 40 | 7.91 | 0 |
+
+#### Kết quả 5-Fold Cross-Validation
+
+| Model | K_Folds | CV_MSE_Mean | CV_MSE_Std | CV_RMSE_Mean | CV_MAE_Mean | CV_MAPE_Mean | CV_R2_Mean | CV_R2_Std |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| MLP Regression | 5 | 11.47 | 3.8966 | 3.3514 | 2.3577 | 12.005 | 0.8607 | 0.0459 |
+| Random Forest | 5 | 12.5518 | 1.9864 | 3.5339 | 2.3361 | 11.6827 | 0.8459 | 0.0395 |
+| Decision Tree | 5 | 18.3829 | 11.6161 | 4.1529 | 2.8782 | 14.5435 | 0.7832 | 0.1212 |
+| Linear Regression | 5 | 23.4886 | 2.0601 | 4.8428 | 3.3885 | 17.0105 | 0.7152 | 0.0419 |
+
+#### Đối sánh Tuning Kiến trúc MLP
+
+| Architecture | Hidden_Units | Total_Params | Train_MSE | Val_MSE | Test_MSE | Test_RMSE | Test_MAE | Test_MAPE | Test_R2 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| MLP_Small (13->16->8->1) | [16, 8] | 369 | 7.0677 | 16.7186 | 12.0885 | 3.4769 | 2.3476 | 12.4294 | 0.8352 |
+| MLP_Baseline (13->32->16->1) | [32, 16] | 993 | 5.019 | 12.3076 | 11.6812 | 3.4178 | 2.3684 | 12.5317 | 0.8407 |
+| MLP_Wide (13->64->32->1) | [64, 32] | 3009 | 6.0023 | 13.6515 | 12.2085 | 3.4941 | 2.3181 | 12.0351 | 0.8335 |
+| MLP_Deep (13->64->32->16->1) | [64, 32, 16] | 3521 | 3.1183 | 11.904 | 10.0503 | 3.1702 | 2.1584 | 10.5635 | 0.863 |
+
+#### Chẩn đoán Thống kê (Model Summary)
+
+| Run_ID | Model | No_Observations_Train | No_Parameters | Log_Likelihood | AIC | BIC | HQIC | F_Statistic | Prob_F | Train_MSE | Train_RMSE | Train_MAE | Train_MAPE | Train_R2 | Adj_R2 | Test_MSE | Test_RMSE | Test_MAE | Test_MAPE | Test_R2 | Durbin_Watson | Ljung_Box_Q | Prob_Q | Jarque_Bera_JB | Prob_JB | Heteroskedasticity_H | Prob_H | Residual_Skew | Residual_Kurtosis | Residual_Variance |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 20261119_001229_43dcff | MLP Regression | 404 | 993 | -970.6703 | 1969.3405 | 2025.3603 | 1991.5164 | 334.3912 | 0.0 | 7.1522 | 2.6744 | 1.9519 | 9.5258 | 0.9177 | 0.9149 | 12.5605 | 3.5441 | 2.2868 | 11.7096 | 0.8287 | 2.054 | 0.331 | 0.5651 | 482.6773 | 0.0 | 1.1294 | 0.3891 | 1.0384 | 7.9357 | 7.409 |
+| 20261119_001229_43dcff | Linear Regression | 404 | 14 | -1194.3221 | 2416.6443 | 2472.6641 | 2438.8201 | 90.4266 | 0.0 | 21.6414 | 4.652 | 3.3148 | 16.5749 | 0.7509 | 0.7426 | 24.2911 | 4.9286 | 3.1891 | 16.8664 | 0.6688 | 2.1141 | 1.3288 | 0.249 | 579.8166 | 0.0 | 0.9651 | 0.8013 | 1.3788 | 8.1807 | 22.4183 |
+| 20261119_001229_43dcff | Decision Tree | 404 | 14 | -957.3095 | 1942.6189 | 1998.6387 | 1964.7948 | 359.3079 | 0.0 | 6.6944 | 2.5874 | 1.8806 | 9.604 | 0.9229 | 0.9204 | 10.5431 | 3.247 | 2.5192 | 13.8809 | 0.8562 | 1.9605 | 0.1175 | 0.7318 | 457.5302 | 0.0 | 0.9124 | 0.5166 | -0.8344 | 7.9391 | 6.9348 |
+| 20261119_001229_43dcff | Random Forest | 404 | 14 | -859.2524 | 1746.5047 | 1802.5245 | 1768.6806 | 602.5769 | 0.0 | 4.12 | 2.0298 | 1.3261 | 6.6295 | 0.9526 | 0.951 | 11.5205 | 3.3942 | 2.0994 | 10.8235 | 0.8429 | 2.0693 | 0.5048 | 0.4774 | 2170.2623 | 0.0 | 0.9785 | 0.8775 | 1.864 | 13.7251 | 4.2679 |
 
 ### 5.5. Danh mục Biểu đồ Thực nghiệm Hợp nhất (`reports/figures/`)
 - Phân phối biến mục tiêu & Tương quan: `../reports/figures/target_distribution.png`, `../reports/figures/correlation_heatmap.png`, `../reports/figures/feature_distributions.png`, `../reports/figures/feature_target_relationships.png`
@@ -106,7 +153,7 @@ $$\text{MAPE (\%)} = \frac{100\%}{N}\sum_{i=1}^{N}\left|\frac{y_i - \hat{y}_i}{y
 4. **Kiểm thử Thực thi Tự động (`End-to-End Pipeline Audit`):** Chạy `python run_lab04.py` và `render_report.py` đạt trạng thái `SUCCESS` 100%.
 
 ## 7. Kết luận
-Hệ thống Lab 04 đã hoàn thành các mục tiêu của Chương 5. Sự kết hợp giữa chuẩn hóa Z-Score chống rò rỉ dữ liệu, kiến trúc MLP `13-32-16-1` với hàm kích hoạt `ReLU`/`Linear`, thuật toán tối ưu `Adam` và `EarlyStopping` đạt `Test R² = 0.8423`, `Test MAPE = 12.22%`; MLP không vượt đồng thời hồi quy tuyến tính và cây quyết định trên cả 5 chỉ số, xem bảng 5.4 để đối chiếu.
+Hệ thống Lab 04 đã hoàn thành các mục tiêu của Chương 5. Sự kết hợp giữa chuẩn hóa Z-Score chống rò rỉ dữ liệu, kiến trúc MLP `13-32-16-1` với hàm kích hoạt `ReLU`/`Linear`, thuật toán tối ưu `Adam` và `EarlyStopping` đạt `Test R² = 0.8287`, `Test MAPE = 11.71%`; MLP không vượt đồng thời hồi quy tuyến tính và cây quyết định trên cả 5 chỉ số, xem bảng 5.4 để đối chiếu.
 
 ## 8. Tài liệu tham khảo
 1. *Bài giảng Chương 5: Introduction to Artificial Neural Networks (ANNs)* & *Practice Exercise 4*, Trường Đại học Giao thông Vận tải TP.HCM (UTH).

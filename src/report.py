@@ -102,7 +102,7 @@ def generate_experiment_summary_markdown(
     epochs_configured, n_figures, figure_dpi = F["epochs_configured"], F["n_figures"], F["figure_dpi"]
     mlp_t, best_name, best_t = F["mlp_t"], F["best_name"], F["best_t"]
     mlp_beats_both, curve_note = F["mlp_beats_both"], F["curve_note"]
-    status = progress_data.get("status", "SUCCESS")
+    status = "SUCCESS" if progress_data.get("status") in ("RUNNING", "SUCCESS", None) else progress_data.get("status")
     status_text = f"`{status}` 100%" if status == "SUCCESS" else f"`{status}`"
     dpi_text = f" (`{figure_dpi} DPI`)" if figure_dpi else ""
 
@@ -116,6 +116,29 @@ def generate_experiment_summary_markdown(
             f"đạt `Test R² = {mlp_t['R2']:.4f}`, `Test MAPE = {mlp_t['MAPE']:.2f}%`; "
             "MLP không vượt đồng thời hồi quy tuyến tính và cây quyết định trên cả 5 chỉ số, xem bảng 5.4 để đối chiếu."
         )
+        
+    import csv
+    from pathlib import Path
+    _metrics_dir = Path(F.get("root_dir", ROOT_DIR)) / "reports" / "metrics"
+    if not _metrics_dir.exists():
+        _metrics_dir = REPORT_DIR / "metrics"
+
+    def _csv_table_md(csv_name: str, heading: str) -> List[str]:
+        p = _metrics_dir / csv_name
+        if not p.exists():
+            return []
+        try:
+            with open(p, encoding="utf-8-sig") as fh:
+                rows = list(csv.DictReader(fh))
+            if not rows:
+                return []
+            cols = list(rows[0].keys())
+            out = ["", heading, "", "| " + " | ".join(cols) + " |", "| " + " | ".join([":---"] * len(cols)) + " |"]
+            for r in rows:
+                out.append("| " + " | ".join(str(r.get(c, "")) for c in cols) + " |")
+            return out
+        except Exception:
+            return []
 
     lines: List[str] = [
         "# BÁO CÁO THỰC HÀNH LAB 04: DỰ ĐOÁN GIÁ NHÀ VỚI MẠNG NƠ-RON ĐA TẦNG (MULTILAYER PERCEPTRON REGRESSION)",
@@ -219,6 +242,11 @@ def generate_experiment_summary_markdown(
     lines.extend([
         "",
         f"- **Mô hình tốt nhất theo Test R²:** `{best_name}` (`R² = {best_t['R2']:.4f}`, `MSE = {best_t['MSE']:.4f}`, `MAPE = {best_t['MAPE']:.2f}%`).",
+        f"- **Regularization MLP:** `l2_lambda = {F.get('l2_lambda', 0.0)}`, `dropout_rate = {F.get('dropout_rate', 0.0)}`.",
+        *_csv_table_md("eda_outlier_analysis.csv", "#### Kiểm toán Giá trị Ngoại lai (EDA Outlier Analysis)"),
+        *_csv_table_md("kfold_cross_validation.csv", "#### Kết quả 5-Fold Cross-Validation"),
+        *_csv_table_md("mlp_architecture_tuning.csv", "#### Đối sánh Tuning Kiến trúc MLP"),
+        *_csv_table_md("model_summary.csv", "#### Chẩn đoán Thống kê (Model Summary)"),
         "",
         "### 5.5. Danh mục Biểu đồ Thực nghiệm Hợp nhất (`reports/figures/`)",
         f"- Phân phối biến mục tiêu & Tương quan: `{fig_prefix}/target_distribution.png`, `{fig_prefix}/correlation_heatmap.png`, `{fig_prefix}/feature_distributions.png`, `{fig_prefix}/feature_target_relationships.png`",

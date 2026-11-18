@@ -77,10 +77,35 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
 
         desc_csv_path = METRICS_DIR / "eda_descriptive_statistics.csv"
         desc_df.to_csv(desc_csv_path, encoding="utf-8-sig")
-
+        
         corr_matrix = df.corr(numeric_only=True).round(4)
         corr_csv_path = METRICS_DIR / "eda_correlation_matrix.csv"
         corr_matrix.to_csv(corr_csv_path, encoding="utf-8-sig")
+
+        # Phân tích điểm ngoại lai (Outlier Analysis) bằng IQR và Z-score (chỉ thống kê, không xóa mẫu)
+        outlier_rows = []
+        for col in df.select_dtypes(include=["number"]).columns:
+            series = df[col].dropna()
+            q1, q3 = float(series.quantile(0.25)), float(series.quantile(0.75))
+            iqr = q3 - q1
+            low_b, high_b = q1 - 1.5 * iqr, q3 + 1.5 * iqr
+            iqr_cnt = int(((series < low_b) | (series > high_b)).sum())
+            std_val = float(series.std(ddof=0))
+            z_cnt = int((series.sub(series.mean()).abs().div(std_val if std_val > 1e-12 else 1.0) > 3.0).sum())
+            outlier_rows.append({
+                "Feature": col,
+                "Q1": round(q1, 4),
+                "Q3": round(q3, 4),
+                "IQR": round(iqr, 4),
+                "Lower_Bound": round(low_b, 4),
+                "Upper_Bound": round(high_b, 4),
+                "IQR_Outlier_Count": iqr_cnt,
+                "IQR_Outlier_Pct": round(iqr_cnt / len(series) * 100.0, 2),
+                "ZScore_gt3_Count": z_cnt,
+            })
+        outlier_df = pd.DataFrame(outlier_rows)
+        outlier_df.to_csv(METRICS_DIR / "eda_outlier_analysis.csv", index=False, encoding="utf-8-sig")
+
 
         # Tạo 4 bộ biểu đồ EDA
         saved_figures = []
@@ -123,6 +148,7 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
             "saved_tables": [
                 "reports/metrics/eda_descriptive_statistics.csv",
                 "reports/metrics/eda_correlation_matrix.csv",
+                "reports/metrics/eda_outlier_analysis.csv",
                 "reports/metrics/eda_summary.json",
             ],
             "saved_figures": saved_figures,

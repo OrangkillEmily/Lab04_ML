@@ -90,27 +90,23 @@ Nghiệm đóng giải tích được tính trực tiếp qua phép phân rã ma
 
 Lưu đối tượng vào `models/linear_regression.pkl` và tính dự đoán trên `102` mẫu `X_test_scaled`.
 
-## 4. Evaluation Metrics — Các chỉ số đánh giá thực nghiệm
-
-Kết quả đánh giá chính thức của `Linear Regression` trên tập Kiểm tra (`102` mẫu — khớp 100% với **Cells 13, 16, 17 & 19 của `lab04.ipynb`**):
-
+## 4. Evaluation metrics
 | Metric | Giá trị trên Tập Test (`102` mẫu) | Giá trị trên Tập Train (`404` mẫu) | Nhận xét & Đối chiếu với `MLP Regression` |
-|---|---:|---:|---|
-| **MSE (↓)** | **`24.2911`** | `21.6414` | Cao gấp **2.10 lần** so với `MLP Regression` (`11.5628`) do bị Underfitting |
-| **RMSE (↓)** | **`$4.9286k`** | `$4.6520k` | Lệch trung bình gần `$5,000 USD` mỗi căn hộ (so với `$3.4004k` của MLP) |
-| **MAE (↓)** | **`$3.1891k`** | `$3.3148k` | Kém hơn `MLP Regression` (`$2.3160k`) tới `$873 USD` trên mỗi căn nhà |
-| **MAPE (↓)** | **`16.8664%` (`16.87%`)** | `16.5749%` | Sai số phần trăm cao nhất trong 4 mô hình (MLP chỉ `12.22%`) |
+| :--- | :---: | :---: | :--- |
+| **MSE (↓)** | **`24.2911`** | `21.6414` | Cao gần gấp đôi `MLP Regression` (`12.5605`) do bị Underfitting |
+| **RMSE (↓)** | **`$4.9286k`** | `$4.6520k` | Lệch trung bình gần `$5,000 USD` mỗi căn hộ (so với `$3.5441k` của MLP) |
+| **MAE (↓)** | **`$3.1891k`** | `$3.3148k` | Kém hơn `MLP Regression` (`$2.2868k`) tới `$902 USD` trên mỗi căn nhà |
+| **MAPE (↓)** | **`16.8664%` (`16.87%`)** | `16.5749%` | Sai số phần trăm cao nhất trong 4 mô hình (MLP chỉ `11.71%`) |
 | **$R^2$ Score (↑)** | **`0.6688` (`66.88%`)** | `0.7509` | Bỏ sót hơn **33.12%** phương sai giá nhà do không bắt được độ cong phi tuyến |
-| **Max_Error (↓)** | **`$25.2604k`** | `$27.2333k` | Sai số cực đại lớn tại các căn nhà cao cấp chạm trần `$50k` |
-| **Within $\pm\$3,000\text{ USD}$ (↑)** | **`58.82%`** | — | Thấp hơn nhiều so với `MLP Regression` (`72.55%`) và `Random Forest` (`81.37%`) |
-| **Training / Prediction Time** | `0.0083s` / `0.000465s` | — | Tốc độ tính toán cực nhanh nhờ công thức nghiệm đóng tuyến tính |
+| **5-Fold Cross-Validation** | `CV MSE = 23.4886 ± 2.0601` | `CV R² = 0.7152 ± 0.0419` | Xếp hạng 4/4 trên cả Hold-out Test và 5-Fold CV |
+| **Within $\pm\$3,000	ext{ USD}$ (↑)** | **`58.82%`** | — | Thấp hơn nhiều so với `MLP Regression` (`75.49%`) và `Random Forest` (`81.37%`) |
+| **TrainingTime / AIC / BIC** | `0.0016s` | `AIC = 2416.64`, `BIC = 2472.66` | Huấn luyện nhanh nhất nhưng chất lượng khớp dữ liệu kém nhất |
 
-## 5. Used Data — Dữ liệu sử dụng
-
+## 5. Used data
 | Tập dữ liệu | Số mẫu | Kích thước | Vai trò đối với `Linear Regression` |
-|---|---:|---|---|
-| `X_train_scaled`, `y_train` | `404` | `(404, 13)` | Dùng để ước lượng trực tiếp 13 hệ số góc `coef_` và hệ số chặn `intercept_` |
-| `X_test_scaled`, `y_test` | `102` | `(102, 13)` | Dùng để đánh giá độc lập 5 chỉ số hồi quy và đối sánh với mạng MLP |
+| :--- | :---: | :---: | :--- |
+| `X_train_scaled`, `y_train` | `404` | `(404, 13)` | Ước lượng trực tiếp 13 hệ số góc `coef_`, hệ số chặn `intercept_` (`14` tham số) và đánh giá 5-Fold CV |
+| `X_test_scaled`, `y_test` | `102` | `(102, 13)` | Đánh giá độc lập 5 chỉ số hồi quy và đối sánh với mạng MLP |
 
 ## Code References
 
