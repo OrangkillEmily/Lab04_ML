@@ -131,6 +131,8 @@ class TestLab04RegressionPipeline(unittest.TestCase):
         cfg_reg["mlp_model"]["dropout_rate"] = 0.05
         mlp_reg = build_mlp_model(input_dim=13, config=cfg_reg)
         self.assertIsNotNone(mlp_reg)
+        self.assertEqual(mlp_reg.count_params(), 993)
+        self.assertEqual(mlp_reg.predict(np.zeros((5, 13))).shape, (5, 1))
 
         # 2. Kiểm tra chạy K-Fold (2-fold nhanh cho unit test) & so sánh kiến trúc MLP
         cfg_cv = copy.deepcopy(self.config)
