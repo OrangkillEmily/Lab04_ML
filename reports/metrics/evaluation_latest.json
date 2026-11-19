@@ -1,17 +1,17 @@
 {
-    "run_id": "20261119_001229_43dcff",
+    "run_id": "20261119_183635_839530",
     "test_samples": 102,
     "train_samples": 404,
     "test_metrics": {
         "MLP Regression": {
-            "MSE": 12.5605,
-            "RMSE": 3.5441,
-            "MAE": 2.2868,
-            "MAPE": 11.7096,
-            "R2": 0.8287,
-            "Max_Error": 22.9871,
-            "Training_Time_Sec": 14.3336,
-            "Prediction_Time_Sec": 0.1054
+            "MSE": 13.5348,
+            "RMSE": 3.679,
+            "MAE": 2.2902,
+            "MAPE": 12.0913,
+            "R2": 0.8154,
+            "Max_Error": 26.2101,
+            "Training_Time_Sec": 6.1319,
+            "Prediction_Time_Sec": 0.002
         },
         "Linear Regression": {
             "MSE": 24.2911,
@@ -20,8 +20,8 @@
             "MAPE": 16.8664,
             "R2": 0.6688,
             "Max_Error": 25.2604,
-            "Training_Time_Sec": 0.0015,
-            "Prediction_Time_Sec": 0.0007
+            "Training_Time_Sec": 0.0083,
+            "Prediction_Time_Sec": 0.0004
         },
         "Decision Tree": {
             "MSE": 10.5431,
@@ -30,8 +30,8 @@
             "MAPE": 13.8809,
             "R2": 0.8562,
             "Max_Error": 10.65,
-            "Training_Time_Sec": 0.0037,
-            "Prediction_Time_Sec": 0.0007
+            "Training_Time_Sec": 0.0073,
+            "Prediction_Time_Sec": 0.0005
         },
         "Random Forest": {
             "MSE": 11.5205,
@@ -40,20 +40,20 @@
             "MAPE": 10.8235,
             "R2": 0.8429,
             "Max_Error": 22.6003,
-            "Training_Time_Sec": 0.1361,
-            "Prediction_Time_Sec": 0.0099
+            "Training_Time_Sec": 0.1655,
+            "Prediction_Time_Sec": 0.0109
         }
     },
     "train_metrics": {
         "MLP Regression": {
-            "MSE": 7.1522,
-            "RMSE": 2.6744,
-            "MAE": 1.9519,
-            "MAPE": 9.5258,
-            "R2": 0.9177,
-            "Max_Error": 15.6554,
-            "Training_Time_Sec": 14.3336,
-            "Prediction_Time_Sec": 0.211
+            "MSE": 9.9278,
+            "RMSE": 3.1508,
+            "MAE": 2.2106,
+            "MAPE": 10.9641,
+            "R2": 0.8857,
+            "Max_Error": 17.1829,
+            "Training_Time_Sec": 6.1319,
+            "Prediction_Time_Sec": 0.0027
         },
         "Linear Regression": {
             "MSE": 21.6414,
@@ -62,8 +62,8 @@
             "MAPE": 16.5749,
             "R2": 0.7509,
             "Max_Error": 27.2333,
-            "Training_Time_Sec": 0.0015,
-            "Prediction_Time_Sec": 0.0004
+            "Training_Time_Sec": 0.0083,
+            "Prediction_Time_Sec": 0.0005
         },
         "Decision Tree": {
             "MSE": 6.6944,
@@ -72,8 +72,8 @@
             "MAPE": 9.604,
             "R2": 0.9229,
             "Max_Error": 16.575,
-            "Training_Time_Sec": 0.0037,
-            "Prediction_Time_Sec": 0.0005
+            "Training_Time_Sec": 0.0073,
+            "Prediction_Time_Sec": 0.0006
         },
         "Random Forest": {
             "MSE": 4.12,
@@ -82,8 +82,8 @@
             "MAPE": 6.6295,
             "R2": 0.9526,
             "Max_Error": 14.8649,
-            "Training_Time_Sec": 0.1361,
-            "Prediction_Time_Sec": 0.0152
+            "Training_Time_Sec": 0.1655,
+            "Prediction_Time_Sec": 0.0166
         }
     },
     "best_models": {
@@ -107,26 +107,26 @@
     "saved_files": [
         "reports/metrics/metrics_summary.csv",
         "reports/metrics/test_metrics_comparison.csv",
-        "reports/predictions/test_predictions_20261119_001229_43dcff.csv",
+        "reports/predictions/test_predictions_20261119_183635_839530.csv",
         "reports/predictions/test_predictions_latest.csv"
     ],
     "saved_figures": [
         "reports/figures/actual_vs_predicted_all.png",
-        "reports/figures/20261119_001229_43dcff/evaluation/actual_vs_predicted_all.png",
+        "reports/figures/20261119_183635_839530/evaluation/actual_vs_predicted_all.png",
         "reports/figures/actual_vs_predicted_mlp.png",
-        "reports/figures/20261119_001229_43dcff/evaluation/actual_vs_predicted_mlp.png",
+        "reports/figures/20261119_183635_839530/evaluation/actual_vs_predicted_mlp.png",
         "reports/figures/residual_plot_all.png",
-        "reports/figures/20261119_001229_43dcff/evaluation/residual_plot_all.png",
+        "reports/figures/20261119_183635_839530/evaluation/residual_plot_all.png",
         "reports/figures/residual_distribution_all.png",
-        "reports/figures/20261119_001229_43dcff/evaluation/residual_distribution_all.png",
+        "reports/figures/20261119_183635_839530/evaluation/residual_distribution_all.png",
         "reports/figures/model_comparison_mse.png",
-        "reports/figures/20261119_001229_43dcff/evaluation/model_comparison_mse.png",
+        "reports/figures/20261119_183635_839530/evaluation/model_comparison_mse.png",
         "reports/figures/model_comparison_mae.png",
-        "reports/figures/20261119_001229_43dcff/evaluation/model_comparison_mae.png",
+        "reports/figures/20261119_183635_839530/evaluation/model_comparison_mae.png",
         "reports/figures/model_comparison_r2.png",
-        "reports/figures/20261119_001229_43dcff/evaluation/model_comparison_r2.png",
+        "reports/figures/20261119_183635_839530/evaluation/model_comparison_r2.png",
         "reports/figures/model_comparison_mape.png",
-        "reports/figures/20261119_001229_43dcff/evaluation/model_comparison_mape.png"
+        "reports/figures/20261119_183635_839530/evaluation/model_comparison_mape.png"
     ],
-    "duration_seconds": 11.4611
+    "duration_seconds": 35.0623
 }

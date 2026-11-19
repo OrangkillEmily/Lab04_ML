@@ -1,0 +1,132 @@
+{
+    "run_id": "20261119_182133_b0db99",
+    "test_samples": 102,
+    "train_samples": 404,
+    "test_metrics": {
+        "MLP Regression": {
+            "MSE": 13.5348,
+            "RMSE": 3.679,
+            "MAE": 2.2902,
+            "MAPE": 12.0913,
+            "R2": 0.8154,
+            "Max_Error": 26.2101,
+            "Training_Time_Sec": 4.7519,
+            "Prediction_Time_Sec": 0.0014
+        },
+        "Linear Regression": {
+            "MSE": 24.2911,
+            "RMSE": 4.9286,
+            "MAE": 3.1891,
+            "MAPE": 16.8664,
+            "R2": 0.6688,
+            "Max_Error": 25.2604,
+            "Training_Time_Sec": 0.0037,
+            "Prediction_Time_Sec": 0.0005
+        },
+        "Decision Tree": {
+            "MSE": 10.5431,
+            "RMSE": 3.247,
+            "MAE": 2.5192,
+            "MAPE": 13.8809,
+            "R2": 0.8562,
+            "Max_Error": 10.65,
+            "Training_Time_Sec": 0.0032,
+            "Prediction_Time_Sec": 0.0004
+        },
+        "Random Forest": {
+            "MSE": 11.5205,
+            "RMSE": 3.3942,
+            "MAE": 2.0994,
+            "MAPE": 10.8235,
+            "R2": 0.8429,
+            "Max_Error": 22.6003,
+            "Training_Time_Sec": 0.133,
+            "Prediction_Time_Sec": 0.0098
+        }
+    },
+    "train_metrics": {
+        "MLP Regression": {
+            "MSE": 9.9278,
+            "RMSE": 3.1508,
+            "MAE": 2.2106,
+            "MAPE": 10.9641,
+            "R2": 0.8857,
+            "Max_Error": 17.1829,
+            "Training_Time_Sec": 4.7519,
+            "Prediction_Time_Sec": 0.0022
+        },
+        "Linear Regression": {
+            "MSE": 21.6414,
+            "RMSE": 4.652,
+            "MAE": 3.3148,
+            "MAPE": 16.5749,
+            "R2": 0.7509,
+            "Max_Error": 27.2333,
+            "Training_Time_Sec": 0.0037,
+            "Prediction_Time_Sec": 0.0005
+        },
+        "Decision Tree": {
+            "MSE": 6.6944,
+            "RMSE": 2.5874,
+            "MAE": 1.8806,
+            "MAPE": 9.604,
+            "R2": 0.9229,
+            "Max_Error": 16.575,
+            "Training_Time_Sec": 0.0032,
+            "Prediction_Time_Sec": 0.0007
+        },
+        "Random Forest": {
+            "MSE": 4.12,
+            "RMSE": 2.0298,
+            "MAE": 1.3261,
+            "MAPE": 6.6295,
+            "R2": 0.9526,
+            "Max_Error": 14.8649,
+            "Training_Time_Sec": 0.133,
+            "Prediction_Time_Sec": 0.0143
+        }
+    },
+    "best_models": {
+        "best_by_mse": {
+            "model": "Decision Tree",
+            "value": 10.5431
+        },
+        "best_by_mae": {
+            "model": "Random Forest",
+            "value": 2.0994
+        },
+        "best_by_mape": {
+            "model": "Random Forest",
+            "value": 10.8235
+        },
+        "best_by_r2": {
+            "model": "Decision Tree",
+            "value": 0.8562
+        }
+    },
+    "saved_files": [
+        "reports/metrics/metrics_summary.csv",
+        "reports/metrics/test_metrics_comparison.csv",
+        "reports/predictions/test_predictions_20261119_182133_b0db99.csv",
+        "reports/predictions/test_predictions_latest.csv"
+    ],
+    "saved_figures": [
+        "reports/figures/actual_vs_predicted_all.png",
+        "reports/figures/20261119_182133_b0db99/evaluation/actual_vs_predicted_all.png",
+        "reports/figures/actual_vs_predicted_mlp.png",
+        "reports/figures/20261119_182133_b0db99/evaluation/actual_vs_predicted_mlp.png",
+        "reports/figures/residual_plot_all.png",
+        "reports/figures/20261119_182133_b0db99/evaluation/residual_plot_all.png",
+        "reports/figures/residual_distribution_all.png",
+        "reports/figures/20261119_182133_b0db99/evaluation/residual_distribution_all.png",
+        "reports/figures/model_comparison_mse.png",
+        "reports/figures/20261119_182133_b0db99/evaluation/model_comparison_mse.png",
+        "reports/figures/model_comparison_mae.png",
+        "reports/figures/20261119_182133_b0db99/evaluation/model_comparison_mae.png",
+        "reports/figures/model_comparison_r2.png",
+        "reports/figures/20261119_182133_b0db99/evaluation/model_comparison_r2.png",
+        "reports/figures/model_comparison_mape.png",
+        "reports/figures/20261119_182133_b0db99/evaluation/model_comparison_mape.png"
+    ],
+    "duration_seconds": 34.2965
+}

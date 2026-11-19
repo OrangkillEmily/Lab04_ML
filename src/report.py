@@ -252,6 +252,7 @@ def generate_experiment_summary_markdown(
         f"- Phân phối biến mục tiêu & Tương quan: `{fig_prefix}/target_distribution.png`, `{fig_prefix}/correlation_heatmap.png`, `{fig_prefix}/feature_distributions.png`, `{fig_prefix}/feature_target_relationships.png`",
         f"- Huấn luyện MLP & Phân chia dữ liệu: `{fig_prefix}/train_val_test_split.png`, `{fig_prefix}/mlp_training_loss_curve.png`, `{fig_prefix}/mlp_train_vs_val_loss.png`, `{fig_prefix}/training_time_comparison.png`",
         f"- Đánh giá & Đối sánh 4 mô hình: `{fig_prefix}/actual_vs_predicted_mlp.png`, `{fig_prefix}/actual_vs_predicted_all.png`, `{fig_prefix}/residual_plot_all.png`, `{fig_prefix}/residual_distribution_all.png`, `{fig_prefix}/model_comparison_mse.png`, `{fig_prefix}/model_comparison_mae.png`, `{fig_prefix}/model_comparison_mape.png`, `{fig_prefix}/model_comparison_r2.png`",
+        f"- Đánh giá, 5-Fold CV & Tuning MLP: `{fig_prefix}/kfold_cv_comparison.png`, `{fig_prefix}/mlp_architecture_tuning.png`",
         "",
         "## 6. Kiểm thử và kiểm toán chất lượng (Quality Assurance)",
         "1. **Clean Architecture & Chuẩn Docstring 5W1H:** Toàn bộ mô-đun trong `src/` tuân thủ PEP-8 và tách biệt cấu hình vào `config.yaml`.",

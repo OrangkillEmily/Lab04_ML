@@ -1,10 +1,12 @@
 {
-    "run_id": "20261119_001229_43dcff",
-    "timestamp": "2026-11-19T00:12:54+07:00",
+    "run_id": "20261119_183635_839530",
+    "timestamp": "2026-11-19T18:36:54+07:00",
     "backend_info": {
-        "has_tensorflow": true,
+        "has_pytorch": true,
+        "has_tensorflow": false,
         "has_sklearn": true,
-        "mlp_backend": "keras.Sequential",
+        "device": "cuda",
+        "mlp_backend": "PyTorch (torch.nn.Module | CUDA)",
         "baseline_backend": "scikit-learn"
     },
     "data_shapes": {
@@ -48,18 +50,18 @@
         "learning_rate": 0.005,
         "loss": "mean_squared_error",
         "epochs_configured": 100,
-        "epochs_executed": 100,
-        "best_epoch": 91,
+        "epochs_executed": 56,
+        "best_epoch": 41,
         "batch_size": 32
     },
     "training_times_seconds": {
-        "MLP Regression": 14.3336,
-        "Linear Regression": 0.0015,
-        "Decision Tree": 0.0037,
-        "Random Forest": 0.1361
+        "MLP Regression": 6.1319,
+        "Linear Regression": 0.0083,
+        "Decision Tree": 0.0073,
+        "Random Forest": 0.1655
     },
     "saved_models": [
-        "models/mlp_regression.keras",
+        "models/mlp_regression.pth",
         "models/linear_regression.pkl",
         "models/decision_tree.pkl",
         "models/random_forest.pkl",

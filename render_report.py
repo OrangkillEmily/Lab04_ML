@@ -494,6 +494,8 @@ def render_html(
     cmp_mape_b64 = _fig("model_comparison_mape.png")
     cmp_r2_b64 = _fig("model_comparison_r2.png")
     time_cmp_b64 = _fig("training_time_comparison.png")
+    kfold_cv_b64 = _fig("kfold_cv_comparison.png")
+    arch_tuning_b64 = _fig("mlp_architecture_tuning.png")
 
     # Lưới an toàn: bất kỳ ảnh PNG nào khác trong reports/figures/ (ví dụ biểu đồ mới thêm sau này)
     # sẽ tự động được nhúng vào Phụ lục, đảm bảo báo cáo KHÔNG BAO GIỜ thiếu ảnh.
@@ -974,11 +976,7 @@ def render_html(
   </div>
   
   {outlier_table_html}
-
-  <details>
-    <summary>Xem mã nguồn trích đoạn nạp và xác thực dữ liệu (src/data_loader.py)</summary>
   
-
   <details>
     <summary>Xem mã nguồn trích đoạn nạp và xác thực dữ liệu (src/data_loader.py)</summary>
     <div class="detail-body">
@@ -1211,6 +1209,20 @@ X_train_sub, X_val_scaled, y_train_sub, y_val = train_test_split_df(
       <figcaption>
         <b>Hình 6.8: Đối sánh Thời gian Huấn luyện giữa 4 Mô hình (Training Time &darr;)</b>
         {time_text}
+      </figcaption>
+    </figure>
+    <figure class="image-card" data-category="metrics">
+      <img src="{kfold_cv_b64}" alt="Biểu đồ 5-Fold Cross-Validation của 4 mô hình">
+      <figcaption>
+        <b>Hình 6.9: Đánh giá 5-Fold Cross-Validation (CV MSE &amp; CV R² kèm thanh sai số ± Std)</b>
+        Kiểm chứng độ ổn định tổng quát của 4 mô hình trên 506 mẫu (StandardScaler fit độc lập trong từng Fold).
+      </figcaption>
+    </figure>
+    <figure class="image-card" data-category="metrics">
+      <img src="{arch_tuning_b64}" alt="Biểu đồ đối sánh 4 kiến trúc PyTorch MLP">
+      <figcaption>
+        <b>Hình 6.10: Tuning Kiến trúc PyTorch MLP (Bias–Variance Trade-off &amp; Test R² theo Số tham số)</b>
+        Đối sánh 4 cấu hình tầng ẩn (Small, Baseline, Wide, Deep) về Train/Val/Test MSE và khả năng tổng quát hóa.
       </figcaption>
     </figure>
   </div>

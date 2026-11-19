@@ -1,37 +1,37 @@
-Multilayer Perceptron (MLP) Model Summary – House Price Prediction
+Multilayer Perceptron (MLP 13-32-16-1) Model Summary – House Price Prediction
 ==============================================================================
 Data: Boston Housing Dataset (data/raw/boston_housing.csv)
 Number of observations: 506 (Train: 404 | Test: 102)
-Architecture: Input(13) -> Dense(32, ReLU) -> Dense(16, ReLU) -> Dense(1, Linear)
-Optimizer: Adam (lr=0.005, batch_size=32)
-Total Parameters: 993 | Backend: keras.Sequential
+Architecture: Input(13) -> Linear(32, ReLU) -> Linear(16, ReLU) -> Linear(1, Linear)
+Optimizer: Adam (lr=0.005, weight_decay=0.001, dropout=0.05, batch_size=32)
+Total Parameters: 993 | Backend: PyTorch (torch.nn.Module | CUDA)
 ==============================================================================
                            MLP(13-32-16-1) Results                            
 ==============================================================================
 Dep. Variable:                    MEDV   No. Observations:                 404
-Model:                 MLP(13-32-16-1)   Log Likelihood:              -970.670
-Date:                 Thu, 19 Nov 2026   AIC:                         1969.341
-Time:                         00:13:02   BIC:                         2025.360
-Sample:                        0 - 404   HQIC:                        1991.516
-Covariance Type:         Adam Backprop   Train R-squared:               0.9177
-Test MSE / RMSE:       12.561/   3.544   Test R-squared:                0.8287
-Test MAE / MAPE:        2.287/  11.71%   F-statistic:                  334.391
+Model:                 MLP(13-32-16-1)   Log Likelihood:             -1036.909
+Date:                 Thu, 19 Nov 2026   AIC:                         2101.817
+Time:                         18:37:02   BIC:                         2157.837
+Sample:                        0 - 404   HQIC:                        2123.993
+Covariance Type:         Adam Backprop   Train R-squared:               0.8857
+Test MSE / RMSE:       13.535/   3.679   Test R-squared:                0.8154
+Test MAE / MAPE:        2.290/  12.09%   F-statistic:                  232.517
 ==============================================================================
 Layer (type)             Shape     Act  Param #    W_mean     W_std   W_L2Norm
 ------------------------------------------------------------------------------
-hidden_layer_1      (13 -> 32)    relu      448   -0.0458    0.3167     6.5264
+hidden_layer_1      (13 -> 32)    relu      448   -0.0539    0.4498     9.2408
 dropout_1            (dropout)    none        0    0.0000    0.0000     0.0000
-hidden_layer_2      (32 -> 16)    relu      528    0.0658    0.3062     7.0858
+hidden_layer_2      (32 -> 16)    relu      528    0.0224    0.2890     6.5591
 dropout_2            (dropout)    none        0    0.0000    0.0000     0.0000
-output_layer         (16 -> 1)  linear       17    0.0006    0.6253     2.5014
+output_layer         (16 -> 1)  linear       17    0.1482    0.4480     1.8875
 ------------------------------------------------------------------------------
-Total Trainable Params: 993 | Best Epoch: 91/100 (Configured: 100)
+Total Trainable Params: 993 | Best Epoch: 41/56 (Configured: 100)
 ==============================================================================
-Ljung-Box (L1) (Q):               0.33   Jarque-Bera (JB):              482.68
-Prob(Q):                          0.57   Prob(JB):                        0.00
-Heteroskedasticity (H):           1.13   Skew:                            1.04
-Prob(H) (two-sided):              0.39   Kurtosis:                        7.94
-Durbin-Watson:                   2.054   Residual Variance:             7.4090
+Ljung-Box (L1) (Q):               0.01   Jarque-Bera (JB):              613.89
+Prob(Q):                          0.92   Prob(JB):                        0.00
+Heteroskedasticity (H):           0.84   Skew:                            0.57
+Prob(H) (two-sided):              0.20   Kurtosis:                        8.93
+Durbin-Watson:                   2.002   Residual Variance:            10.2841
 ==============================================================================
 
 Notes:
@@ -50,7 +50,7 @@ Number of parameters: 14 (1 intercept + 13 standardized features)
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:                  OLS Regression   Log Likelihood:             -1194.322
 Date:                 Thu, 19 Nov 2026   AIC:                         2416.644
-Time:                         00:13:02   BIC:                         2472.664
+Time:                         18:37:02   BIC:                         2472.664
 Sample:                        0 - 404   HQIC:                        2438.820
 Covariance Type:       nonrobust (OLS)   Train R-squared:               0.7509
 Test MSE / RMSE:       24.291/   4.929   Test R-squared:                0.6688
@@ -97,7 +97,7 @@ Actual Tree Depth: 6 | Number of Leaf Nodes: 34
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:                    DecisionTree   Log Likelihood:              -957.309
 Date:                 Thu, 19 Nov 2026   AIC:                         1942.619
-Time:                         00:13:02   BIC:                         1998.639
+Time:                         18:37:02   BIC:                         1998.639
 Sample:                        0 - 404   HQIC:                        1964.795
 Covariance Type:         CART Impurity   Train R-squared:               0.9229
 Test MSE / RMSE:       10.543/   3.247   Test R-squared:                0.8562
@@ -142,7 +142,7 @@ Tree Depth (Mean / Max): 10.0 / 10 | Mean Leaves per Tree: 90.3
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:                    RandomForest   Log Likelihood:              -859.252
 Date:                 Thu, 19 Nov 2026   AIC:                         1746.505
-Time:                         00:13:02   BIC:                         1802.525
+Time:                         18:37:02   BIC:                         1802.525
 Sample:                        0 - 404   HQIC:                        1768.681
 Covariance Type:         CART Impurity   Train R-squared:               0.9526
 Test MSE / RMSE:       11.521/   3.394   Test R-squared:                0.8429
@@ -175,21 +175,143 @@ Notes:
 [1] Toàn bộ tham số và chỉ số được trích xuất động 100% từ mô hình thực nghiệm.
 ------------------------------------------------------------------------------
 
+MLP_Small (13->16->8->1) Model Summary – House Price Prediction
+==============================================================================
+Data: Boston Housing Dataset (data/raw/boston_housing.csv)
+Number of observations: 506 (Train: 404 | Test: 102)
+Architecture: Input(13) -> Linear(16, ReLU) -> Linear(8, ReLU) -> Linear(1, Linear)
+Optimizer: Adam (lr=0.005, weight_decay=0.001, dropout=0.05, batch_size=32)
+Total Parameters: 369 | Backend: PyTorch (torch.nn.Module | CUDA)
+==============================================================================
+                         MLP_Small(13-16-8-1) Results                         
+==============================================================================
+Dep. Variable:                    MEDV   No. Observations:                 404
+Model:            MLP_Small(13-16-8-1)   Log Likelihood:             -1031.477
+Date:                 Thu, 19 Nov 2026   AIC:                         2090.953
+Time:                         18:37:27   BIC:                         2146.973
+Sample:                        0 - 404   HQIC:                        2113.129
+Covariance Type:         Adam Backprop   Train R-squared:               0.8888
+Test MSE / RMSE:       12.499/   3.535   Test R-squared:                0.8296
+Test MAE / MAPE:        2.288/  11.84%   F-statistic:                  239.672
+==============================================================================
+Layer (type)             Shape     Act  Param #    W_mean     W_std   W_L2Norm
+------------------------------------------------------------------------------
+hidden_layer_1      (13 -> 16)    relu      224   -0.0720    0.4641     6.7731
+dropout_1            (dropout)    none        0    0.0000    0.0000     0.0000
+hidden_layer_2       (16 -> 8)    relu      136    0.2132    0.4012     5.1402
+dropout_2            (dropout)    none        0    0.0000    0.0000     0.0000
+output_layer          (8 -> 1)  linear        9    0.3316    0.5208     1.7464
+------------------------------------------------------------------------------
+Total Trainable Params: 369 | Best Epoch: 93/100 (Configured: 100)
+==============================================================================
+Ljung-Box (L1) (Q):               0.18   Jarque-Bera (JB):              480.87
+Prob(Q):                          0.68   Prob(JB):                        0.00
+Heteroskedasticity (H):           0.87   Skew:                            0.97
+Prob(H) (two-sided):              0.31   Kurtosis:                        7.98
+Durbin-Watson:                   1.950   Residual Variance:            10.0113
+==============================================================================
+
+Notes:
+[1] Toàn bộ tham số và chỉ số được trích xuất động 100% từ mô hình thực nghiệm.
+------------------------------------------------------------------------------
+
+MLP_Wide (13->64->32->1) Model Summary – House Price Prediction
+==============================================================================
+Data: Boston Housing Dataset (data/raw/boston_housing.csv)
+Number of observations: 506 (Train: 404 | Test: 102)
+Architecture: Input(13) -> Linear(64, ReLU) -> Linear(32, ReLU) -> Linear(1, Linear)
+Optimizer: Adam (lr=0.005, weight_decay=0.001, dropout=0.05, batch_size=32)
+Total Parameters: 3009 | Backend: PyTorch (torch.nn.Module | CUDA)
+==============================================================================
+                         MLP_Wide(13-64-32-1) Results                         
+==============================================================================
+Dep. Variable:                    MEDV   No. Observations:                 404
+Model:            MLP_Wide(13-64-32-1)   Log Likelihood:             -1030.410
+Date:                 Thu, 19 Nov 2026   AIC:                         2088.820
+Time:                         18:37:27   BIC:                         2144.840
+Sample:                        0 - 404   HQIC:                        2110.996
+Covariance Type:         Adam Backprop   Train R-squared:               0.8893
+Test MSE / RMSE:       13.769/   3.711   Test R-squared:                0.8122
+Test MAE / MAPE:        2.442/  12.92%   F-statistic:                  241.100
+==============================================================================
+Layer (type)             Shape     Act  Param #    W_mean     W_std   W_L2Norm
+------------------------------------------------------------------------------
+hidden_layer_1      (13 -> 64)    relu      896   -0.0376    0.4064    11.7718
+dropout_1            (dropout)    none        0    0.0000    0.0000     0.0000
+hidden_layer_2      (64 -> 32)    relu     2080    0.0233    0.2039     9.2868
+dropout_2            (dropout)    none        0    0.0000    0.0000     0.0000
+output_layer         (32 -> 1)  linear       33    0.1205    0.2709     1.6772
+------------------------------------------------------------------------------
+Total Trainable Params: 3009 | Best Epoch: 34/49 (Configured: 100)
+==============================================================================
+Ljung-Box (L1) (Q):               0.17   Jarque-Bera (JB):              267.62
+Prob(Q):                          0.68   Prob(JB):                        0.00
+Heteroskedasticity (H):           0.98   Skew:                            0.38
+Prob(H) (two-sided):              0.90   Kurtosis:                        6.92
+Durbin-Watson:                   2.039   Residual Variance:             9.9585
+==============================================================================
+
+Notes:
+[1] Toàn bộ tham số và chỉ số được trích xuất động 100% từ mô hình thực nghiệm.
+------------------------------------------------------------------------------
+
+MLP_Deep (13->64->32->16->1) Model Summary – House Price Prediction
+==============================================================================
+Data: Boston Housing Dataset (data/raw/boston_housing.csv)
+Number of observations: 506 (Train: 404 | Test: 102)
+Architecture: Input(13) -> Linear(64, ReLU) -> Linear(32, ReLU) -> Linear(16, ReLU) -> Linear(1, Linear)
+Optimizer: Adam (lr=0.005, weight_decay=0.001, dropout=0.05, batch_size=32)
+Total Parameters: 3521 | Backend: PyTorch (torch.nn.Module | CUDA)
+==============================================================================
+                       MLP_Deep(13-64-32-16-1) Results                        
+==============================================================================
+Dep. Variable:                    MEDV   No. Observations:                 404
+Model:         MLP_Deep(13-64-32-16-1)   Log Likelihood:             -1006.192
+Date:                 Thu, 19 Nov 2026   AIC:                         2040.383
+Time:                         18:37:27   BIC:                         2096.403
+Sample:                        0 - 404   HQIC:                        2062.559
+Covariance Type:         Adam Backprop   Train R-squared:               0.9018
+Test MSE / RMSE:       13.765/   3.710   Test R-squared:                0.8123
+Test MAE / MAPE:        2.637/  13.26%   F-statistic:                  275.631
+==============================================================================
+Layer (type)             Shape     Act  Param #    W_mean     W_std   W_L2Norm
+------------------------------------------------------------------------------
+hidden_layer_1      (13 -> 64)    relu      896   -0.0207    0.3992    11.5290
+dropout_1            (dropout)    none        0    0.0000    0.0000     0.0000
+hidden_layer_2      (64 -> 32)    relu     2080    0.0004    0.1989     9.0026
+dropout_2            (dropout)    none        0    0.0000    0.0000     0.0000
+hidden_layer_3      (32 -> 16)    relu      528    0.0225    0.2471     5.6138
+dropout_3            (dropout)    none        0    0.0000    0.0000     0.0000
+output_layer         (16 -> 1)  linear       17    0.2385    0.3445     1.6761
+------------------------------------------------------------------------------
+Total Trainable Params: 3521 | Best Epoch: 31/46 (Configured: 100)
+==============================================================================
+Ljung-Box (L1) (Q):               0.49   Jarque-Bera (JB):               78.97
+Prob(Q):                          0.48   Prob(JB):                        0.00
+Heteroskedasticity (H):           0.91   Skew:                            0.44
+Prob(H) (two-sided):              0.51   Kurtosis:                        4.98
+Durbin-Watson:                   2.011   Residual Variance:             8.8334
+==============================================================================
+
+Notes:
+[1] Toàn bộ tham số và chỉ số được trích xuất động 100% từ mô hình thực nghiệm.
+------------------------------------------------------------------------------
+
 K-Fold Cross-Validation & MLP Architecture Tuning Summary
 ==============================================================================
 1. 5-FOLD CROSS-VALIDATION RESULTS (506 samples, leak-free per-fold scaling)
 ------------------------------------------------------------------------------
             Model  K_Folds  CV_MSE_Mean  CV_MSE_Std  CV_RMSE_Mean  CV_MAE_Mean  CV_MAPE_Mean  CV_R2_Mean  CV_R2_Std
-   MLP Regression        5      11.4700      3.8966        3.3514       2.3577       12.0050      0.8607     0.0459
+   MLP Regression        5      12.4888      2.7870        3.5177       2.4428       11.9853      0.8483     0.0352
     Random Forest        5      12.5518      1.9864        3.5339       2.3361       11.6827      0.8459     0.0395
     Decision Tree        5      18.3829     11.6161        4.1529       2.8782       14.5435      0.7832     0.1212
 Linear Regression        5      23.4886      2.0601        4.8428       3.3885       17.0105      0.7152     0.0419
 ==============================================================================
-2. MLP ARCHITECTURE & HYPERPARAMETER TUNING COMPARISON
+2. MLP ARCHITECTURE & HYPERPARAMETER TUNING COMPARISON (PyTorch)
 ------------------------------------------------------------------------------
                 Architecture Hidden_Units  Total_Params  Train_MSE  Val_MSE  Test_MSE  Test_RMSE  Test_MAE  Test_MAPE  Test_R2
-    MLP_Small (13->16->8->1)      [16, 8]           369     7.0677  16.7186   12.0885     3.4769    2.3476    12.4294   0.8352
-MLP_Baseline (13->32->16->1)     [32, 16]           993     5.0190  12.3076   11.6812     3.4178    2.3684    12.5317   0.8407
-    MLP_Wide (13->64->32->1)     [64, 32]          3009     6.0023  13.6515   12.2085     3.4941    2.3181    12.0351   0.8335
-MLP_Deep (13->64->32->16->1) [64, 32, 16]          3521     3.1183  11.9040   10.0503     3.1702    2.1584    10.5635   0.8630
+    MLP_Small (13->16->8->1)      [16, 8]           369     8.4158  14.6431   12.4992     3.5354    2.2884    11.8373   0.8296
+MLP_Baseline (13->32->16->1)     [32, 16]           993     8.4487  15.8257   13.5348     3.6790    2.2902    12.0913   0.8154
+    MLP_Wide (13->64->32->1)     [64, 32]          3009     8.3452  14.6707   13.7687     3.7106    2.4422    12.9155   0.8122
+MLP_Deep (13->64->32->16->1) [64, 32, 16]          3521     7.4476  12.8325   13.7648     3.7101    2.6371    13.2612   0.8123
 ==============================================================================
