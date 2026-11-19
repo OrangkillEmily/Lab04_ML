@@ -1,16 +1,21 @@
 """
 Module trích xuất báo cáo thống kê chuyên sâu (`src/model_summary.py`) theo định dạng
-bảng học thuật chuẩn `statsmodels` cho cả 4 mô hình hồi quy trong dự án LAB04.
+bảng học thuật chuẩn `statsmodels` thống nhất cho TOÀN BỘ các mô hình trong dự án LAB04 (PyTorch Edition).
 
 Đặc điểm cốt lõi:
-- Không gán cứng bất kỳ con số nào (Zero Hardcoding): Toàn bộ hệ số, sai số chuẩn (Std Err),
-  thống kê t/z, p-value, khoảng tin cậy 95% [0.025, 0.975], Log-Likelihood, AIC, BIC, HQIC,
-  Durbin-Watson, Ljung-Box (L1), Jarque-Bera (JB), Heteroskedasticity (H), Skewness, Kurtosis,
-  cấu trúc tầng mạng MLP và độ quan trọng đặc trưng của Cây quyết định / Rừng ngẫu nhiên
-  đều được trích xuất động 100% từ các mô hình đã huấn luyện trong `models/` và dữ liệu
-  trong `data/processed/`.
+- Hỗ trợ trực tiếp PyTorch (`PyTorchMLPRegressor` / `torch.nn.Module`) qua `build_mlp_model()`
+  và `get_layer_stats()`, đồng thời giữ tương thích với `NumPySequentialMLP`.
+- Xuất báo cáo theo CÙNG MỘT BỐ CỤC THỐNG NHẤT chuẩn `statsmodels` (khung 78 ký tự `=` / `-`) cho:
+  1. MLP Regression (13-32-16-1) — Core PyTorch Model
+  2. Linear Regression (OLS)
+  3. Decision Tree Regression (CART)
+  4. Random Forest Regression (Ensemble)
+  5. Các kiến trúc MLP mở rộng từ Tuning (`MLP_Small`, `MLP_Wide`, `MLP_Deep`)
+  6. Bảng tổng hợp 5-Fold Cross-Validation & So sánh Kiến trúc (cùng khung ASCII 78 ký tự, không cần `tabulate`).
+- Zero Hardcoding: Toàn bộ số liệu trích xuất động 100% từ trọng số và dữ liệu thực tế.
 """
 
+import copy
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -21,8 +26,8 @@ from scipy import stats
 
 from src.data_loader import load_housing_dataframe
 from src.evaluate import PROCESSED_DIR, compute_regression_metrics, load_all_trained_models
-from src.model import NumPySequentialMLP, build_baseline_models
-from src.preprocess import create_scaler
+from src.model import build_baseline_models, build_mlp_model, get_backend_info
+from src.preprocess import create_scaler, split_dataset
 from src.utils import ensure_dir, get_project_root, load_config, load_json, load_object, save_json
 
 ROOT_DIR = get_project_root()
@@ -36,18 +41,7 @@ def compute_residual_diagnostics(
     y_pred: np.ndarray,
     n_params: int,
 ) -> Dict[str, float]:
-    """
-    What: Tính toàn bộ các chỉ số thống kê học thuật và kiểm định phần dư từ y_true và y_pred.
-    Why: Cung cấp các chỉ số Log-Likelihood, AIC, BIC, HQIC, F-statistic, Durbin-Watson,
-         Ljung-Box Q(1), Jarque-Bera, Heteroskedasticity (H), Skew và Kurtosis theo chuẩn statsmodels.
-    Input:
-        - y_true (np.ndarray): Vector giá trị thực tế.
-        - y_pred (np.ndarray): Vector giá trị dự đoán.
-        - n_params (int): Số lượng tham số tự do k của mô hình.
-    Output:
-        - Dict[str, float]: Từ điển chứa toàn bộ chỉ số kiểm định thống kê.
-    How: Sử dụng công thức hợp lý cực đại Gaussian và các kiểm định thống kê từ scipy.stats.
-    """
+    """Tính toàn bộ các chỉ số thống kê học thuật và kiểm định phần dư từ y_true và y_pred."""
     y_t = np.asarray(y_true, dtype=np.float64).ravel()
     y_p = np.asarray(y_pred, dtype=np.float64).ravel()
     residuals = y_t - y_p
@@ -133,16 +127,11 @@ def _format_header_and_footer(
     metrics_test: Dict[str, float],
     cov_type: str,
     middle_lines: List[str],
+    n_test: int = 102,
     extra_top_lines: Optional[List[str]] = None,
     note_line: str = "[1] Toàn bộ tham số và chỉ số được trích xuất động 100% từ mô hình thực nghiệm.",
 ) -> str:
-    """
-    What: Định dạng khung bảng ASCII chuẩn statsmodels (giống ảnh mẫu SARIMAX/OLS Results).
-    Why: Thống nhất giao diện báo cáo thống kê cho cả 4 mô hình hồi quy.
-    Input: Các thông số chẩn đoán, bảng tham số ở giữa và ghi chú.
-    Output: Chuỗi văn bản bảng summary hoàn chỉnh.
-    How: Căn lề trái/phải cố định 78 ký tự với đường kẻ '=' và '-'.
-    """
+    """Định dạng khung bảng ASCII 78 ký tự thống nhất chuẩn statsmodels cho mọi mô hình."""
     now_dt = datetime.now()
     date_str = now_dt.strftime("%a, %d %b %Y")
     time_str = now_dt.strftime("%H:%M:%S")
@@ -153,7 +142,7 @@ def _format_header_and_footer(
         title,
         sep_eq,
         "Data: Boston Housing Dataset (data/raw/boston_housing.csv)",
-        f"Number of observations: {diag_train['n_obs'] + 102} (Train: {diag_train['n_obs']} | Test: 102)",
+        f"Number of observations: {diag_train['n_obs'] + n_test} (Train: {diag_train['n_obs']} | Test: {n_test})",
     ]
     if extra_top_lines:
         lines.extend(extra_top_lines)
@@ -162,11 +151,11 @@ def _format_header_and_footer(
         f"{model_label + ' Results':^78}",
         sep_eq,
         f"{'Dep. Variable:':<22}{dep_var:>16}   {'No. Observations:':<22}{diag_train['n_obs']:>15}",
-        f"{'Model:':<22}{model_label:>16}   {'Log Likelihood:':<22}{diag_train['log_likelihood']:>15.3f}",
+        f"{'Model:':<8}{model_label[:30]:>30}   {'Log Likelihood:':<22}{diag_train['log_likelihood']:>15.3f}",
         f"{'Date:':<22}{date_str:>16}   {'AIC:':<22}{diag_train['aic']:>15.3f}",
         f"{'Time:':<22}{time_str:>16}   {'BIC:':<22}{diag_train['bic']:>15.3f}",
         f"{'Sample:':<22}{'0 - ' + str(diag_train['n_obs']):>16}   {'HQIC:':<22}{diag_train['hqic']:>15.3f}",
-        f"{'Covariance Type:':<22}{cov_type:>16}   {'Train R-squared:':<22}{metrics_train['R2']:>15.4f}",
+        f"{'Covariance Type:':<22}{cov_type[:16]:>16}   {'Train R-squared:':<22}{metrics_train['R2']:>15.4f}",
         f"{'Test MSE / RMSE:':<22}{metrics_test['MSE']:>7.3f}/{metrics_test['RMSE']:>8.3f}   {'Test R-squared:':<22}{metrics_test['R2']:>15.4f}",
         f"{'Test MAE / MAPE:':<22}{metrics_test['MAE']:>7.3f}/{metrics_test['MAPE']:>7.2f}%   {'F-statistic:':<22}{diag_train['f_stat']:>15.3f}",
         sep_eq,
@@ -196,13 +185,7 @@ def build_linear_regression_summary(
     y_test: np.ndarray,
     feature_names: List[str],
 ) -> Tuple[str, Dict[str, Any]]:
-    """
-    What: Trích xuất bảng hệ số OLS (coef, std err, t, P>|t|, [0.025, 0.975]) cho Linear Regression.
-    Why: Mô phỏng chính xác 100% bảng kết quả hồi quy tuyến tính chuẩn học thuật.
-    Input: Mô hình LinearRegression đã fit, X_train, y_train, X_test, y_test và danh sách tên biến.
-    Output: Văn bản bảng summary và từ điển dữ liệu chi tiết.
-    How: Tính ma trận hiệp phương sai (X_design^T * X_design)^(-1) * sigma^2 và kiểm định t-Student.
-    """
+    """Trích xuất bảng hệ số OLS chuẩn statsmodels cho Linear Regression."""
     y_pred_train = np.asarray(model.predict(X_train), dtype=np.float64).ravel()
     y_pred_test = np.asarray(model.predict(X_test), dtype=np.float64).ravel()
 
@@ -257,6 +240,7 @@ def build_linear_regression_summary(
         metrics_test=m_test,
         cov_type="nonrobust (OLS)",
         middle_lines=middle,
+        n_test=len(y_test),
         extra_top_lines=[
             "Estimator: Ordinary Least Squares (fit_intercept=True)",
             f"Number of parameters: {k} (1 intercept + {n_features} standardized features)",
@@ -272,31 +256,46 @@ def build_mlp_regression_summary(
     X_test: np.ndarray,
     y_test: np.ndarray,
     metadata: Dict[str, Any],
+    model_title: Optional[str] = None,
+    model_label: Optional[str] = None,
+    best_epoch_override: Optional[int] = None,
+    epochs_ran_override: Optional[int] = None,
 ) -> Tuple[str, Dict[str, Any]]:
     """
-    What: Trích xuất bảng thống kê từng tầng (Layer, Shape, Param #, Weight Mean/Std/L2, Bias Norm) cho MLP.
-    Why: Phản ánh đầy đủ cấu trúc giải phẫu mạng nơ-ron đa tầng và kết quả hội tụ thực tế.
-    Input: Mô hình MLP đã huấn luyện, dữ liệu Train/Test và training_metadata.json.
-    Output: Văn bản bảng summary và từ điển dữ liệu chi tiết.
-    How: Đọc trực tiếp ma trận trọng số W, vector bias b từ các tầng Dense của Keras hoặc NumPySequentialMLP.
+    Trích xuất bảng thống kê từng tầng (Layer, Shape, Act, Param #, W_mean, W_std, W_L2Norm)
+    theo cùng bố cục statsmodels cho bất kỳ mô hình MLP nào (PyTorch hoặc NumPySequentialMLP).
     """
     y_pred_train = np.asarray(model.predict(X_train), dtype=np.float64).ravel()
     y_pred_test = np.asarray(model.predict(X_test), dtype=np.float64).ravel()
 
-    layer_rows = []
+    layer_rows: List[Dict[str, Any]] = []
     total_params = 0
 
-    if hasattr(model, "layers"):
+    if hasattr(model, "get_layer_stats"):
+        # Nhánh ưu tiên cho PyTorchMLPRegressor
+        for s in model.get_layer_stats():
+            p_count = int(s["params"])
+            total_params += p_count
+            layer_rows.append({
+                "layer": s["name"],
+                "shape": s["shape"],
+                "activation": s["activation"],
+                "params": p_count,
+                "w_mean": round(float(s["w_mean"]), 4),
+                "w_std": round(float(s["w_std"]), 4),
+                "w_l2": round(float(s["w_l2_norm"]), 4),
+            })
+    elif hasattr(model, "layers"):
+        # Tương thích ngược nếu còn mô hình Keras cũ
         for lyr in model.layers:
             weights_list = lyr.get_weights()
             if weights_list:
                 W, b = np.asarray(weights_list[0]), np.asarray(weights_list[1])
                 p_count = int(W.size + b.size)
-                w_mean, w_std = float(np.mean(W)), float(np.std(W))
-                w_l2, b_l2 = float(np.linalg.norm(W)), float(np.linalg.norm(b))
+                w_mean, w_std, w_l2 = float(np.mean(W)), float(np.std(W)), float(np.linalg.norm(W))
                 in_out = f"({W.shape[0]} -> {W.shape[1]})"
             else:
-                p_count, w_mean, w_std, w_l2, b_l2 = 0, 0.0, 0.0, 0.0, 0.0
+                p_count, w_mean, w_std, w_l2 = 0, 0.0, 0.0, 0.0
                 in_out = "(dropout)"
             act_name = getattr(getattr(lyr, "activation", None), "__name__", "none")
             total_params += p_count
@@ -308,7 +307,6 @@ def build_mlp_regression_summary(
                 "w_mean": round(w_mean, 4),
                 "w_std": round(w_std, 4),
                 "w_l2": round(w_l2, 4),
-                "b_l2": round(b_l2, 4),
             })
     else:
         acts = list(getattr(model, "hidden_activations", ["relu", "relu"])) + [getattr(model, "output_activation", "linear")]
@@ -325,8 +323,12 @@ def build_mlp_regression_summary(
                 "w_mean": round(float(np.mean(W_arr)), 4),
                 "w_std": round(float(np.std(W_arr)), 4),
                 "w_l2": round(float(np.linalg.norm(W_arr)), 4),
-                "b_l2": round(float(np.linalg.norm(b_arr)), 4),
             })
+
+    hidden_u = list(getattr(model, "hidden_units", [32, 16]))
+    in_dim = int(getattr(model, "input_dim", X_train.shape[1]))
+    arch_dash = "-".join([str(in_dim)] + [str(u) for u in hidden_u] + ["1"])
+    arch_arrow = f"Input({in_dim}) -> " + " -> ".join(f"Linear({u}, ReLU)" for u in hidden_u) + " -> Linear(1, Linear)"
 
     eff_k = X_train.shape[1] + 1
     diag = compute_residual_diagnostics(y_train, y_pred_train, n_params=eff_k)
@@ -334,6 +336,14 @@ def build_mlp_regression_summary(
     m_test = compute_regression_metrics(y_test, y_pred_test)
 
     mlp_meta = metadata.get("mlp_architecture", {})
+    lr_val = getattr(model, "learning_rate", mlp_meta.get("learning_rate", 0.005))
+    l2_val = getattr(model, "l2_lambda", 0.0)
+    drop_val = getattr(model, "dropout_rate", 0.0)
+    best_ep = best_epoch_override if best_epoch_override is not None else (getattr(model, "best_epoch_", 0) or mlp_meta.get("best_epoch", 100))
+    ep_ran = epochs_ran_override if epochs_ran_override is not None else mlp_meta.get("epochs_executed", 100)
+    ep_cfg = mlp_meta.get("epochs_configured", 100)
+    backend_str = get_backend_info().get("mlp_backend", "PyTorch (torch.nn.Module)")
+
     middle = [
         f"{'Layer (type)':<18}{'Shape':>12}{'Act':>8}{'Param #':>9}{'W_mean':>10}{'W_std':>10}{'W_L2Norm':>11}",
         "-" * 78,
@@ -345,23 +355,26 @@ def build_mlp_regression_summary(
         )
     middle.append("-" * 78)
     middle.append(
-        f"Total Trainable Params: {total_params} | Best Epoch: {mlp_meta.get('best_epoch', 70)}/"
-        f"{mlp_meta.get('epochs_executed', 85)} (Configured: {mlp_meta.get('epochs_configured', 100)})"
+        f"Total Trainable Params: {total_params} | Best Epoch: {best_ep}/{ep_ran} (Configured: {ep_cfg})"
     )
 
+    resolved_title = model_title or f"Multilayer Perceptron (MLP {arch_dash}) Model Summary – House Price Prediction"
+    resolved_label = model_label or f"MLP({arch_dash})"
+
     text = _format_header_and_footer(
-        title="Multilayer Perceptron (MLP) Model Summary – House Price Prediction",
-        model_label="MLP(13-32-16-1)",
+        title=resolved_title,
+        model_label=resolved_label,
         dep_var="MEDV",
         diag_train=diag,
         metrics_train=m_train,
         metrics_test=m_test,
         cov_type="Adam Backprop",
         middle_lines=middle,
+        n_test=len(y_test),
         extra_top_lines=[
-            "Architecture: Input(13) -> Dense(32, ReLU) -> Dense(16, ReLU) -> Dense(1, Linear)",
-            f"Optimizer: Adam (lr={mlp_meta.get('learning_rate', 0.005)}, batch_size={mlp_meta.get('batch_size', 32)})",
-            f"Total Parameters: {total_params} | Backend: {metadata.get('backend_info', {}).get('mlp_backend', 'keras.Sequential')}",
+            f"Architecture: {arch_arrow}",
+            f"Optimizer: Adam (lr={lr_val}, weight_decay={l2_val}, dropout={drop_val}, batch_size={mlp_meta.get('batch_size', 32)})",
+            f"Total Parameters: {total_params} | Backend: {backend_str}",
         ],
     )
     return text, {
@@ -383,14 +396,7 @@ def build_tree_based_summary(
     y_test: np.ndarray,
     feature_names: List[str],
 ) -> Tuple[str, Dict[str, Any]]:
-    """
-    What: Trích xuất bảng thống kê độ quan trọng đặc trưng (Feature Importance, Std Err, z/t, Rank, Cum %)
-          và cấu trúc cây thực tế cho Decision Tree và Random Forest.
-    Why: Cung cấp bảng thống kê minh bạch tương đương bảng hệ số hồi quy cho các mô hình cây.
-    Input: Mô hình Decision Tree hoặc Random Forest đã fit, dữ liệu Train/Test và tên đặc trưng.
-    Output: Văn bản bảng summary và từ điển dữ liệu chi tiết.
-    How: Trích xuất feature_importances_, độ sâu cây, số lá và độ lệch chuẩn giữa các cây trong rừng.
-    """
+    """Trích xuất bảng thống kê độ quan trọng đặc trưng chuẩn statsmodels cho Decision Tree và Random Forest."""
     y_pred_train = np.asarray(model.predict(X_train), dtype=np.float64).ravel()
     y_pred_test = np.asarray(model.predict(X_test), dtype=np.float64).ravel()
 
@@ -442,12 +448,10 @@ def build_tree_based_summary(
     ]
     imp_records = []
     for idx, fname in enumerate(feature_names):
-        imp = float(importances[idx])
-        se = float(std_err[idx])
-        zv = float(z_vals[idx])
-        pv = float(p_vals[idx])
-        cl = float(ci_low[idx])
-        ch = float(ci_high[idx])
+        imp, se, zv, pv, cl, ch = (
+            float(importances[idx]), float(std_err[idx]), float(z_vals[idx]),
+            float(p_vals[idx]), float(ci_low[idx]), float(ci_high[idx]),
+        )
         middle.append(f"{fname:<14}{imp:>10.4f}{se:>11.4f}{zv:>10.3f}{pv:>9.3f}{cl:>12.4f}{ch:>12.4f}")
         imp_records.append({
             "feature": fname,
@@ -469,27 +473,31 @@ def build_tree_based_summary(
         metrics_test=m_test,
         cov_type="CART Impurity",
         middle_lines=middle,
+        n_test=len(y_test),
         extra_top_lines=extra_top,
     )
     return text, {"diagnostics": diag, "train_metrics": m_train, "test_metrics": m_test, "feature_importances": imp_records}
 
 
-def run_kfold_and_architecture_tuning(config: Dict[str, Any]) -> Tuple[pd.DataFrame, pd.DataFrame, str]:
-    """
-    What: Thực thi 5-Fold Cross-Validation cho cả 4 mô hình và đối sánh 4 kiến trúc mạng MLP.
-    Why: Giải quyết triệt để hạn chế phụ thuộc vào một phép chia random_state=42 và chứng minh
-         tính hợp lý của kiến trúc chuẩn 13 -> 32 -> 16 -> 1 (Điểm 6 phản biện nhóm).
-    Input: config (Dict[str, Any]) từ config.yaml.
-    Output: (cv_summary_df, arch_tuning_df, formatted_ascii_report).
-    How:
-        1. Chia 506 mẫu thành K=5 folds; trong mỗi fold chỉ fit StandardScaler trên K-1 folds huấn luyện.
-        2. Huấn luyện và đánh giá 4 cấu hình tầng ẩn MLP trên tập Train_sub / Val / Test.
-    """
+def _build_candidate_config(base_config: Dict[str, Any], units: List[int]) -> Dict[str, Any]:
+    """Tạo bản sao config.yaml với danh sách tầng ẩn tùy biến để build PyTorch MLP."""
+    cfg = copy.deepcopy(base_config)
+    cfg.setdefault("mlp_model", {})["hidden_layers"] = [
+        {"units": int(u), "activation": "relu", "name": f"hidden_layer_{idx}"}
+        for idx, u in enumerate(units, start=1)
+    ]
+    return cfg
+
+
+def _run_kfold_and_tuning_internal(
+    config: Dict[str, Any],
+) -> Tuple[pd.DataFrame, pd.DataFrame, str, List[Dict[str, Any]]]:
+    """Thực thi K-Fold CV (PyTorch MLP + 3 Baselines) & Tuning 4 kiến trúc MLP bằng PyTorch."""
     t_cfg = config.get("tuning_and_cv", {})
     k_folds = int(t_cfg.get("k_folds", 5))
     cv_epochs = int(t_cfg.get("cv_epochs", 80))
-    lr = float(config.get("mlp_model", {}).get("learning_rate", 0.005))
     batch_size = int(config.get("mlp_model", {}).get("batch_size", 32))
+    es_cfg = config.get("mlp_model", {}).get("early_stopping", {"enabled": True, "patience": 15, "restore_best_weights": True})
     seed = int(config.get("data", {}).get("random_state", 42))
 
     df, _ = load_housing_dataframe(config)
@@ -517,7 +525,7 @@ def run_kfold_and_architecture_tuning(config: Dict[str, Any]) -> Tuple[pd.DataFr
             m = compute_regression_metrics(y_va, mdl.predict(X_va))
             cv_rows.append({"Fold": fold_idx + 1, "Model": name, **m})
 
-        mlp_cv = NumPySequentialMLP(input_dim=X_tr.shape[1], hidden_units=[32, 16], learning_rate=lr, random_state=seed)
+        mlp_cv = build_mlp_model(input_dim=X_tr.shape[1], config=config)
         mlp_cv.fit(X_tr, y_tr, epochs=cv_epochs, batch_size=batch_size, verbose=0)
         m_mlp = compute_regression_metrics(y_va, np.asarray(mlp_cv.predict(X_va)).ravel())
         cv_rows.append({"Fold": fold_idx + 1, "Model": "MLP Regression", **m_mlp})
@@ -539,8 +547,7 @@ def run_kfold_and_architecture_tuning(config: Dict[str, Any]) -> Tuple[pd.DataFr
         .reset_index(drop=True)
         .round(4)
     )
-    
-    # Đối sánh các kiến trúc MLP khác nhau (Architecture Tuning)
+
     if (PROCESSED_DIR / "X_train_sub.pkl").exists():
         X_tr_sub = np.asarray(load_object(PROCESSED_DIR / "X_train_sub.pkl"), dtype=np.float64)
         y_tr_sub = np.asarray(load_object(PROCESSED_DIR / "y_train_sub.pkl"), dtype=np.float64).ravel()
@@ -549,7 +556,6 @@ def run_kfold_and_architecture_tuning(config: Dict[str, Any]) -> Tuple[pd.DataFr
         X_test = np.asarray(load_object(PROCESSED_DIR / "X_test_scaled.pkl"), dtype=np.float64)
         y_test = np.asarray(load_object(PROCESSED_DIR / "y_test.pkl"), dtype=np.float64).ravel()
     else:
-        from src.preprocess import split_dataset
         X_tr_raw, X_te_raw, y_tr_all, y_test = split_dataset(X_raw, y_raw, test_size=0.2, random_state=seed)
         sc_tmp = create_scaler(with_mean=True, with_std=True)
         X_tr_sc = sc_tmp.fit_transform(X_tr_raw)
@@ -566,15 +572,22 @@ def run_kfold_and_architecture_tuning(config: Dict[str, Any]) -> Tuple[pd.DataFr
         ],
     )
     arch_rows = []
+    trained_candidates: List[Dict[str, Any]] = []
+    tune_epochs = int(config.get("mlp_model", {}).get("epochs", 100))
+
     for cand in candidates:
         units = [int(u) for u in cand["hidden_units"]]
-        m_cand = NumPySequentialMLP(
-            input_dim=X_tr_sub.shape[1],
-            hidden_units=units,
-            learning_rate=lr,
-            random_state=seed,
+        cand_cfg = _build_candidate_config(config, units)
+        m_cand = build_mlp_model(input_dim=X_tr_sub.shape[1], config=cand_cfg)
+        hist = m_cand.fit(
+            X_tr_sub,
+            y_tr_sub,
+            epochs=tune_epochs,
+            batch_size=batch_size,
+            validation_data=(X_val, y_val),
+            early_stopping_cfg=es_cfg,
+            verbose=0,
         )
-        m_cand.fit(X_tr_sub, y_tr_sub, epochs=100, batch_size=batch_size, validation_data=(X_val, y_val), verbose=0)
         m_tr = compute_regression_metrics(y_tr_sub, m_cand.predict(X_tr_sub))
         m_va = compute_regression_metrics(y_val, m_cand.predict(X_val))
         m_te = compute_regression_metrics(y_test, m_cand.predict(X_test))
@@ -590,31 +603,41 @@ def run_kfold_and_architecture_tuning(config: Dict[str, Any]) -> Tuple[pd.DataFr
             "Test_MAPE": round(m_te["MAPE"], 4),
             "Test_R2": round(m_te["R2"], 4),
         })
+        trained_candidates.append({
+            "name": cand["name"],
+            "units": units,
+            "model": m_cand,
+            "epochs_ran": len(hist.history.get("loss", [])),
+            "best_epoch": int(getattr(m_cand, "best_epoch_", len(hist.history.get("loss", [])))),
+        })
+
     arch_tuning_df = pd.DataFrame(arch_rows)
 
     sep_eq = "=" * 78
+    sep_dash = "-" * 78
     ascii_block = "\n".join([
         "K-Fold Cross-Validation & MLP Architecture Tuning Summary",
         sep_eq,
         f"1. {k_folds}-FOLD CROSS-VALIDATION RESULTS (506 samples, leak-free per-fold scaling)",
-        "-" * 78,
+        sep_dash,
         cv_summary_df.to_string(index=False),
-        "=" * 78,
-        "2. MLP ARCHITECTURE & HYPERPARAMETER TUNING COMPARISON",
-        "-" * 78,
+        sep_eq,
+        "2. MLP ARCHITECTURE & HYPERPARAMETER TUNING COMPARISON (PyTorch)",
+        sep_dash,
         arch_tuning_df.to_string(index=False),
         sep_eq,
     ])
-    return cv_summary_df, arch_tuning_df, ascii_block
+    return cv_summary_df, arch_tuning_df, ascii_block, trained_candidates
+
+
+def run_kfold_and_architecture_tuning(config: Dict[str, Any]) -> Tuple[pd.DataFrame, pd.DataFrame, str]:
+    """Giữ nguyên giao diện trả về 3 giá trị (cv_df, arch_df, ascii_block) cho tests/test_lab04.py."""
+    cv_df, arch_df, ascii_block, _ = _run_kfold_and_tuning_internal(config)
+    return cv_df, arch_df, ascii_block
+
 
 def main(run_id: Optional[str] = None) -> Dict[str, Any]:
-    """
-    What: Trích xuất và lưu toàn bộ báo cáo `model_summary` của cả 4 mô hình ra TXT, JSON và Markdown.
-    Why: Đáp ứng yêu cầu thống kê toàn diện 4 mô hình từ dữ liệu và trọng số thực tế mà không sửa code lõi.
-    Input: run_id (Optional[str]).
-    Output: Từ điển chứa đường dẫn các tệp báo cáo model_summary đã xuất.
-    How: Nạp dữ liệu từ `data/processed/`, nạp 4 mô hình từ `models/`, trích xuất số liệu và ghi xuống đĩa.
-    """
+    """Trích xuất và lưu báo cáo model_summary thống nhất cho toàn bộ mô hình ra TXT, CSV, JSON và MD."""
     config = load_config()
     feature_names = list(config.get("data", {}).get(
         "feature_columns",
@@ -623,6 +646,7 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
     if not (PROCESSED_DIR / "X_train_scaled.pkl").exists():
         from src import preprocess
         preprocess.main(run_id)
+
     X_train = np.asarray(load_object(PROCESSED_DIR / "X_train_scaled.pkl"), dtype=np.float64)
     y_train = np.asarray(load_object(PROCESSED_DIR / "y_train.pkl"), dtype=np.float64).ravel()
     X_test = np.asarray(load_object(PROCESSED_DIR / "X_test_scaled.pkl"), dtype=np.float64)
@@ -631,32 +655,68 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
     meta_path = MODEL_DIR / "training_metadata.json"
     metadata = load_json(meta_path) if meta_path.exists() else {}
 
+    # 1. Trích xuất 4 mô hình chủ chốt theo chuẩn statsmodels
+    summary_sections: List[Tuple[str, str, str, Dict[str, Any]]] = []
+
     mlp_txt, mlp_dict = build_mlp_regression_summary(
         models["MLP Regression"], X_train, y_train, X_test, y_test, metadata
     )
+    summary_sections.append(("MLP Regression", "Multilayer Perceptron (MLP) Regression Summary", mlp_txt, mlp_dict))
+
     ols_txt, ols_dict = build_linear_regression_summary(
         models["Linear Regression"], X_train, y_train, X_test, y_test, feature_names
     )
+    summary_sections.append(("Linear Regression", "Linear Regression (OLS) Summary", ols_txt, ols_dict))
+
     dt_txt, dt_dict = build_tree_based_summary(
         models["Decision Tree"], "Decision Tree Regression (CART)", "DecisionTree",
         X_train, y_train, X_test, y_test, feature_names
     )
+    summary_sections.append(("Decision Tree", "Decision Tree Regression (CART) Summary", dt_txt, dt_dict))
+
     rf_txt, rf_dict = build_tree_based_summary(
         models["Random Forest"], "Random Forest Regression (Ensemble)", "RandomForest",
         X_train, y_train, X_test, y_test, feature_names
     )
-    
-    cv_summary_df, arch_tuning_df, cv_tuning_txt = run_kfold_and_architecture_tuning(config)
+    summary_sections.append(("Random Forest", "Random Forest Regression (Ensemble) Summary", rf_txt, rf_dict))
+
+    # 2. Chạy 5-Fold CV & Tuning 4 kiến trúc MLP, trích xuất CÙNG BỐ CỤC STATSMODELS cho các kiến trúc mở rộng
+    cv_summary_df, arch_tuning_df, cv_tuning_txt, trained_candidates = _run_kfold_and_tuning_internal(config)
+
+    for cand in trained_candidates:
+        # Bỏ qua kiến trúc Baseline [32, 16] vì đã có ở Mục 1 (MLP Regression chủ chốt)
+        if cand["units"] == [32, 16]:
+            continue
+        short_name = cand["name"].split(" ")[0]
+        arch_dash = "-".join([str(X_train.shape[1])] + [str(u) for u in cand["units"]] + ["1"])
+        c_txt, c_dict = build_mlp_regression_summary(
+            cand["model"],
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            metadata,
+            model_title=f"{cand['name']} Model Summary – House Price Prediction",
+            model_label=f"{short_name}({arch_dash})",
+            best_epoch_override=cand["best_epoch"],
+            epochs_ran_override=cand["epochs_ran"],
+        )
+        summary_sections.append((cand["name"], f"{cand['name']} Summary", c_txt, c_dict))
+
+    ensure_dir(METRICS_DIR)
+    ensure_dir(DOCS_DIR)
+
     cv_csv_path = METRICS_DIR / "kfold_cross_validation.csv"
     arch_csv_path = METRICS_DIR / "mlp_architecture_tuning.csv"
     cv_summary_df.to_csv(cv_csv_path, index=False, encoding="utf-8-sig")
     arch_tuning_df.to_csv(arch_csv_path, index=False, encoding="utf-8-sig")
+    from src.visualize import create_stage_figure_dir, plot_kfold_cv_comparison, plot_mlp_architecture_tuning
+    eval_stage_dir = create_stage_figure_dir(run_id or metadata.get("run_id", "latest"), "evaluation")
+    plot_kfold_cv_comparison(cv_summary_df, stage_dir=eval_stage_dir)
+    plot_mlp_architecture_tuning(arch_tuning_df, stage_dir=eval_stage_dir)
 
-    all_summaries_txt = "\n\n".join([mlp_txt, ols_txt, dt_txt, rf_txt, cv_tuning_txt])
+    all_summaries_txt = "\n\n".join([sec[2] for sec in summary_sections] + [cv_tuning_txt])
 
-    ensure_dir(METRICS_DIR)
-    ensure_dir(DOCS_DIR)
-    
     txt_path = METRICS_DIR / "model_summary.txt"
     csv_path = METRICS_DIR / "model_summary.csv"
     json_path = METRICS_DIR / "model_summary.json"
@@ -664,15 +724,11 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
 
     txt_path.write_text(all_summaries_txt, encoding="utf-8")
 
-    # Trích xuất bảng tổng hợp toàn bộ chỉ số thống kê của cả 4 mô hình ra CSV
-    model_dicts = {
-        "MLP Regression": mlp_dict,
-        "Linear Regression": ols_dict,
-        "Decision Tree": dt_dict,
-        "Random Forest": rf_dict,
-    }
+    # Xuất bảng CSV tổng hợp cho TOÀN BỘ các mô hình (4 chủ chốt + các biến thể MLP Tuning)
+    model_dicts: Dict[str, Any] = {}
     csv_rows = []
-    for m_name, m_data in model_dicts.items():
+    for m_name, _, _, m_data in summary_sections:
+        model_dicts[m_name] = m_data
         d = m_data["diagnostics"]
         tr = m_data["train_metrics"]
         te = m_data["test_metrics"]
@@ -711,59 +767,35 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
         })
     pd.DataFrame(csv_rows).to_csv(csv_path, index=False, encoding="utf-8-sig")
 
-    save_json(
-        {
-            "run_id": run_id or metadata.get("run_id", "latest"),
-            **model_dicts,
-        },
-        json_path,
-    )
+    save_json({"run_id": run_id or metadata.get("run_id", "latest"), **model_dicts}, json_path)
 
+    # Xuất docs/Model_Summary.md đồng nhất 100% cùng 1 kiểu khung ASCII chuẩn statsmodels
     md_lines = [
         "# THỐNG KÊ CHI TIẾT TOÀN BỘ MÔ HÌNH (COMPREHENSIVE MODEL SUMMARY)",
         "",
-        "Tài liệu này được trích xuất tự động 100% từ trọng số, hệ số hồi quy, cấu trúc cây và phần dư thực tế của 4 mô hình đã huấn luyện thông qua mô-đun `src/model_summary.py`.",
-        "",
-        "## 1. Multilayer Perceptron (MLP) Regression Summary",
-        "```text",
-        mlp_txt,
-        "```",
-        "",
-        "## 2. Linear Regression (OLS) Summary",
-        "```text",
-        ols_txt,
-        "```",
-        "",
-        "## 3. Decision Tree Regression (CART) Summary",
-        "```text",
-        dt_txt,
-        "```",
-        "",
-        "## 4. Random Forest Regression (Ensemble) Summary",
-        "```text",
-        rf_txt,
-        "```",
+        "Tài liệu này được trích xuất tự động 100% theo **một bố cục thống nhất chuẩn `statsmodels`** từ trọng số, hệ số hồi quy, cấu trúc cây và phần dư thực tế của toàn bộ các mô hình (4 mô hình chủ chốt + các biến thể kiến trúc MLP PyTorch) thông qua mô-đun `src/model_summary.py`.",
         "",
     ]
-    if cv_summary_df is not None and not cv_summary_df.empty:
+    for idx, (_, heading, txt_block, _) in enumerate(summary_sections, start=1):
         md_lines.extend([
-            "## 5. 5-Fold Cross-Validation Summary",
-            "",
-            cv_summary_df.to_markdown(index=False),
+            f"## {idx}. {heading}",
+            "```text",
+            txt_block,
+            "```",
             "",
         ])
-    if arch_tuning_df is not None and not arch_tuning_df.empty:
-        md_lines.extend([
-            "## 6. MLP Architecture Tuning Summary (Small / Baseline / Wide / Deep)",
-            "",
-            arch_tuning_df.to_markdown(index=False),
-            "",
-        ])
-    md_content = "\n".join(md_lines)
-    md_path.write_text(md_content, encoding="utf-8")
+
+    md_lines.extend([
+        f"## {len(summary_sections) + 1}. K-Fold Cross-Validation & Architecture Comparison Summary",
+        "```text",
+        cv_tuning_txt,
+        "```",
+        "",
+    ])
+    md_path.write_text("\n".join(md_lines), encoding="utf-8")
 
     print("\n" + "=" * 78)
-    print("ĐÃ TRÍCH XUẤT BÁO CÁO MODEL SUMMARY CHO CẢ 4 MÔ HÌNH THÀNH CÔNG!")
+    print(f"ĐÃ TRÍCH XUẤT BÁO CÁO MODEL SUMMARY THỐNG NHẤT CHO {len(summary_sections)} MÔ HÌNH!")
     print("=" * 78)
     print(all_summaries_txt)
     return {

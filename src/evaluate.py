@@ -127,9 +127,9 @@ def load_all_trained_models(config: Optional[Dict[str, Any]] = None) -> Dict[str
         - config (Optional[Dict[str, Any]]): Cấu hình từ `config.yaml`.
     Output:
         - Dict[str, Any]: Từ điển chứa 4 mô hình theo thứ tự chuẩn.
-    How: Gọi `load_mlp_model()` cho `mlp_regression.keras` và `load_object()` cho 3 tệp `.pkl`.
+    How: Gọi `load_mlp_model()` cho `mlp_regression.pth` và `load_object()` cho 3 tệp `.pkl`.
     """
-    mlp_path = MODEL_DIR / "mlp_regression.keras"
+    mlp_path = MODEL_DIR / "mlp_regression.pth"
     lr_path = MODEL_DIR / "linear_regression.pkl"
     dt_path = MODEL_DIR / "decision_tree.pkl"
     rf_path = MODEL_DIR / "random_forest.pkl"

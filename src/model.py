@@ -1,26 +1,20 @@
 """
-Module định nghĩa kiến trúc các mô hình học máy (`src/model.py`) cho dự án LAB04.
+Module định nghĩa kiến trúc các mô hình học máy (`src/model.py`) cho dự án LAB04 (PyTorch Edition).
 
 Trách nhiệm của module:
-1. Xây dựng mô hình trọng tâm **Multilayer Perceptron (MLP) Regression**:
-   - Kiến trúc tuần tự (`Sequential`):
-     `Input Layer (n_features=13)` → `Dense(32, activation='relu')` → `Dense(16, activation='relu')` → `Dense(1, activation='linear')`.
-   - Biên dịch (`compile`) với thuật toán tối ưu `Adam`, hàm mất mát `mean_squared_error` (MSE),
-     và chỉ số theo dõi `mae` (Mean Absolute Error) cùng `mape` (Mean Absolute Percentage Error).
-   - Không sử dụng hàm kích hoạt `Softmax` (vì Softmax chỉ dành cho bài toán phân loại đa lớp).
+1. Xây dựng mô hình trọng tâm **Multilayer Perceptron (MLP) Regression** bằng **PyTorch (`torch.nn.Module`)**:
+   - Đóng gói dữ liệu chuẩn PyTorch với `BostonHousingDataset(Dataset)` và `DataLoader`.
+   - Kiến trúc `BostonMLPNet(nn.Module)`:
+     `Input (13)` -> `nn.Linear(13, 32) + ReLU + Dropout` -> `nn.Linear(32, 16) + ReLU + Dropout` -> `nn.Linear(16, 1) (Linear)`.
+   - Khởi tạo trọng số **He Normal** (`kaiming_normal_`) cho tầng `ReLU` và **Xavier Uniform** (`xavier_uniform_`) cho tầng đầu ra `Linear`.
+   - Hàm mất mát `nn.MSELoss()`, bộ tối ưu `torch.optim.Adam(lr=0.005, weight_decay=l2_lambda)`, tự động nhận **CUDA GPU** nếu khả dụng hoặc CPU.
+   - Hỗ trợ `EarlyStopping` trên tập Validation (`model.eval()` + `torch.no_grad()`), lưu/nạp trọng số chuẩn `.pth` qua `torch.save(state_dict)`.
 2. Xây dựng 3 mô hình học máy đối chiếu (Baseline Regression Models):
-   - `Linear Regression` (Hồi quy tuyến tính bình phương tối thiểu - OLS).
-   - `Decision Tree Regressor` (Cây quyết định hồi quy CART).
-   - `Random Forest Regressor` (Rừng ngẫu nhiên hồi quy Ensemble).
-3. Hỗ trợ song song hai chế độ thực thi:
-   - **Chế độ chuẩn (Primary Backend)**: Sử dụng trực tiếp 'keras` và `scikit-learn`
-     khi môi trường đã cài đặt đầy đủ thư viện theo `requirements.txt`.
-   - **Chế độ tương thích toán học (NumPy/SciPy Mathematical Engine)**: Tự động kích hoạt nếu
-     môi trường thực thi hiện tại chưa cài đặt `tensorflow` hoặc `scikit-learn`, đảm bảo công thức
-     Lan truyền thuận (Forward Pass), Lan truyền ngược (Backpropagation), cập nhật trọng số Adam,
-     OLS và CART được thực thi chính xác và có thể lưu/nạp chéo trọng số với Keras `.keras`.
+   - `Linear Regression` (OLS), `Decision Tree Regressor` (CART), `Random Forest Regressor` (Ensemble, `max_features='sqrt'`).
+3. Giữ nguyên lớp tương thích toán học `NumPySequentialMLP` và các lớp `*Compat` phục vụ Unit Tests & fallback offline.
 """
 
+import copy
 import json
 import zipfile
 from pathlib import Path
@@ -29,15 +23,17 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 
 try:
-    import tensorflow as tf
-    from keras import regularizers
-    from keras.callbacks import EarlyStopping
-    from keras.layers import Dense, Dropout, Input
-    from keras.models import Sequential, load_model as keras_load_model
-    from keras.optimizers import Adam
-    HAS_TENSORFLOW = True
+    import torch
+    import torch.nn as nn
+    import torch.nn.init as init
+    import torch.optim as optim
+    from torch.utils.data import DataLoader, Dataset
+    HAS_PYTORCH = True
 except ImportError:
-    HAS_TENSORFLOW = False
+    HAS_PYTORCH = False
+
+HAS_TENSORFLOW = False  # Chuyển hoàn toàn sang PyTorch theo yêu cầu môn học
+
 try:
     from sklearn.ensemble import RandomForestRegressor as SklearnRandomForestRegressor
     from sklearn.linear_model import LinearRegression as SklearnLinearRegression
@@ -47,26 +43,310 @@ except ImportError:
     HAS_SKLEARN = False
 
 
+def get_device() -> Any:
+    """Tự động chọn GPU (CUDA) nếu máy có GPU hỗ trợ PyTorch, ngược lại dùng CPU."""
+    if HAS_PYTORCH:
+        return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return "cpu"
+
+
 def get_backend_info() -> Dict[str, Any]:
-    """
-    What: Trả về thông tin chi tiết về các thư viện backend đang được sử dụng cho MLP và Baselines.
-    Why: Đảm bảo tính minh bạch tuyệt đối (Rule 5 & Audit 7) khi ghi nhận vào logs và báo cáo.
-    Input: Không có tham số đầu vào.
-    Output:
-        - Dict[str, Any]: Trạng thái `has_tensorflow`, `has_sklearn`, tên backend thực tế.
-    How: Kiểm tra cờ `HAS_TENSORFLOW` và `HAS_SKLEARN` tại thời điểm chạy.
-    """
+    """Trả về thông tin backend đang sử dụng cho MLP (PyTorch) và Baselines (scikit-learn)."""
+    device_str = str(get_device()) if HAS_PYTORCH else "cpu"
     return {
-        "has_tensorflow": HAS_TENSORFLOW,
+        "has_pytorch": HAS_PYTORCH,
+        "has_tensorflow": False,
         "has_sklearn": HAS_SKLEARN,
-        "mlp_backend": "keras.Sequential" if HAS_TENSORFLOW else "NumPySequentialMLP (Exact Adam + Backprop)",
+        "device": device_str,
+        "mlp_backend": f"PyTorch (torch.nn.Module | {device_str.upper()})" if HAS_PYTORCH else "NumPySequentialMLP (Exact Adam + Backprop)",
         "baseline_backend": "scikit-learn" if HAS_SKLEARN else "NumPy/SciPy Exact Regression Engine",
     }
 
 
-# ==============================================================================
-# PHẦN 1: MÔ HÌNH MULTILAYER PERCEPTRON (MLP) REGRESSION
-# ==============================================================================
+if HAS_PYTORCH:
+    class BostonHousingDataset(Dataset):
+        """Custom PyTorch Dataset lưu trữ đặc trưng X và nhãn giá nhà y (MEDV)."""
+
+        def __init__(self, X: np.ndarray, y: np.ndarray) -> None:
+            self.X = torch.tensor(np.asarray(X, dtype=np.float32), dtype=torch.float32)
+            self.y = torch.tensor(np.asarray(y, dtype=np.float32).reshape(-1, 1), dtype=torch.float32)
+
+        def __len__(self) -> int:
+            return len(self.X)
+
+        def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
+            return self.X[idx], self.y[idx]
+
+
+    class BostonMLPNet(nn.Module):
+        """Mạng nơ-ron đa tầng PyTorch (nn.Module) cho bài toán hồi quy giá nhà."""
+
+        def __init__(
+            self,
+            input_dim: int,
+            hidden_units: List[int],
+            hidden_activations: Optional[List[str]] = None,
+            output_activation: str = "linear",
+            dropout_rate: float = 0.0,
+        ) -> None:
+            super().__init__()
+            self.input_dim = int(input_dim)
+            self.hidden_units = [int(u) for u in hidden_units]
+            self.hidden_activations = list(hidden_activations or ["relu"] * len(self.hidden_units))
+            self.output_activation = str(output_activation).lower()
+            self.dropout_rate = float(dropout_rate)
+
+            self.layer_specs: List[Tuple[str, nn.Module, str]] = []
+            self.net = nn.Sequential()
+            prev_dim = self.input_dim
+
+            for idx, (units, act_name) in enumerate(zip(self.hidden_units, self.hidden_activations), start=1):
+                linear = nn.Linear(prev_dim, units)
+                if act_name.lower() in ("relu", "leaky_relu"):
+                    init.kaiming_normal_(linear.weight, nonlinearity="relu")
+                else:
+                    init.xavier_uniform_(linear.weight)
+                init.zeros_(linear.bias)
+
+                layer_name = f"hidden_layer_{idx}"
+                self.net.add_module(layer_name, linear)
+                self.layer_specs.append((layer_name, linear, act_name.lower()))
+
+                if act_name.lower() == "relu":
+                    self.net.add_module(f"relu_{idx}", nn.ReLU())
+                elif act_name.lower() == "leaky_relu":
+                    self.net.add_module(f"leaky_relu_{idx}", nn.LeakyReLU(0.01))
+                elif act_name.lower() == "tanh":
+                    self.net.add_module(f"tanh_{idx}", nn.Tanh())
+                elif act_name.lower() == "sigmoid":
+                    self.net.add_module(f"sigmoid_{idx}", nn.Sigmoid())
+
+                if self.dropout_rate > 0.0:
+                    drop = nn.Dropout(p=self.dropout_rate)
+                    drop_name = f"dropout_{idx}"
+                    self.net.add_module(drop_name, drop)
+                    self.layer_specs.append((drop_name, drop, "none"))
+
+                prev_dim = units
+
+            out_layer = nn.Linear(prev_dim, 1)
+            init.xavier_uniform_(out_layer.weight)
+            init.zeros_(out_layer.bias)
+            self.net.add_module("output_layer", out_layer)
+            self.layer_specs.append(("output_layer", out_layer, self.output_activation))
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            return self.net(x)
+
+
+    class PyTorchMLPRegressor:
+        """
+        Wrapper chuẩn hóa giao diện cho BostonMLPNet (PyTorch):
+        - Tự động dùng GPU (CUDA) nếu khả dụng hoặc CPU.
+        - Thực thi đầy đủ vòng lặp Train (DataLoader, zero_grad, backward, step)
+          và Validation (model.eval(), torch.no_grad(), EarlyStopping).
+        - Lưu/nạp trọng số chuẩn PyTorch (.pth).
+        """
+
+        def __init__(
+            self,
+            input_dim: int,
+            hidden_units: List[int],
+            hidden_activations: Optional[List[str]] = None,
+            output_activation: str = "linear",
+            learning_rate: float = 0.005,
+            l2_lambda: float = 0.0,
+            dropout_rate: float = 0.0,
+            random_state: int = 42,
+            architecture_name: str = "PyTorch_MLP_Regressor",
+        ) -> None:
+            self.input_dim = int(input_dim)
+            self.hidden_units = [int(u) for u in hidden_units]
+            self.hidden_activations = list(hidden_activations or ["relu"] * len(self.hidden_units))
+            self.output_activation = str(output_activation).lower()
+            self.learning_rate = float(learning_rate)
+            self.l2_lambda = float(l2_lambda)
+            self.dropout_rate = float(dropout_rate)
+            self.random_state = int(random_state)
+            self.name = str(architecture_name)
+
+            torch.manual_seed(self.random_state)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(self.random_state)
+
+            self.device = get_device()
+            self.model = BostonMLPNet(
+                input_dim=self.input_dim,
+                hidden_units=self.hidden_units,
+                hidden_activations=self.hidden_activations,
+                output_activation=self.output_activation,
+                dropout_rate=self.dropout_rate,
+            ).to(self.device)
+            self.best_epoch_ = 0
+
+        @staticmethod
+        def _compute_metrics(y_true: np.ndarray, y_pred: np.ndarray) -> Tuple[float, float, float]:
+            yt = y_true.ravel()
+            yp = y_pred.ravel()
+            err = yt - yp
+            mse = float(np.mean(err ** 2))
+            mae = float(np.mean(np.abs(err)))
+            mape = float(np.mean(np.abs(err) / np.maximum(np.abs(yt), 1e-8)) * 100.0)
+            return mse, mae, mape
+
+        def fit(
+            self,
+            X: np.ndarray,
+            y: np.ndarray,
+            epochs: int = 100,
+            batch_size: int = 32,
+            validation_data: Optional[Tuple[np.ndarray, np.ndarray]] = None,
+            early_stopping_cfg: Optional[Dict[str, Any]] = None,
+            verbose: int = 0,
+            **kwargs: Any,
+        ) -> "TrainingHistoryCompat":
+            torch.manual_seed(self.random_state)
+            dataset = BostonHousingDataset(X, y)
+            generator = torch.Generator()
+            generator.manual_seed(self.random_state)
+            train_loader = DataLoader(dataset, batch_size=int(batch_size), shuffle=True, generator=generator)
+
+            criterion = nn.MSELoss()
+            optimizer = optim.Adam(
+                self.model.parameters(),
+                lr=self.learning_rate,
+                weight_decay=self.l2_lambda,
+            )
+
+            es_cfg = early_stopping_cfg or {}
+            es_enabled = bool(es_cfg.get("enabled", True)) and (validation_data is not None)
+            patience = int(es_cfg.get("patience", 15))
+            min_delta = float(es_cfg.get("min_delta", 0.001))
+            restore_best = bool(es_cfg.get("restore_best_weights", True))
+
+            history: Dict[str, List[float]] = {
+                "loss": [], "mae": [], "mape": [],
+                "val_loss": [], "val_mae": [], "val_mape": [],
+            }
+
+            best_val_loss = float("inf")
+            best_state = copy.deepcopy(self.model.state_dict())
+            best_epoch = 1
+            no_improve = 0
+
+            X_tr_arr = np.asarray(X, dtype=np.float32)
+            y_tr_arr = np.asarray(y, dtype=np.float32).ravel()
+            X_val_arr = np.asarray(validation_data[0], dtype=np.float32) if validation_data is not None else None
+            y_val_arr = np.asarray(validation_data[1], dtype=np.float32).ravel() if validation_data is not None else None
+
+            for epoch in range(1, int(epochs) + 1):
+                # 1. Training mode (bật Dropout)
+                self.model.train()
+                for bx, by in train_loader:
+                    bx = bx.to(self.device)
+                    by = by.to(self.device)
+
+                    optimizer.zero_grad()
+                    outputs = self.model(bx)
+                    loss = criterion(outputs, by)
+                    loss.backward()
+                    optimizer.step()
+
+                # 2. Evaluation mode (tắt Dropout & tắt autograd)
+                tr_pred = self.predict(X_tr_arr)
+                tr_mse, tr_mae, tr_mape = self._compute_metrics(y_tr_arr, tr_pred)
+                history["loss"].append(tr_mse)
+                history["mae"].append(tr_mae)
+                history["mape"].append(tr_mape)
+
+                if X_val_arr is not None and y_val_arr is not None:
+                    val_pred = self.predict(X_val_arr)
+                    val_mse, val_mae, val_mape = self._compute_metrics(y_val_arr, val_pred)
+                    history["val_loss"].append(val_mse)
+                    history["val_mae"].append(val_mae)
+                    history["val_mape"].append(val_mape)
+
+                    if val_mse < best_val_loss - min_delta:
+                        best_val_loss = val_mse
+                        best_epoch = epoch
+                        best_state = copy.deepcopy(self.model.state_dict())
+                        no_improve = 0
+                    else:
+                        no_improve += 1
+                        if es_enabled and no_improve >= patience:
+                            break
+
+            if es_enabled and restore_best:
+                self.model.load_state_dict(best_state)
+            self.best_epoch_ = best_epoch if validation_data is not None else len(history["loss"])
+
+            if validation_data is None:
+                history.pop("val_loss")
+                history.pop("val_mae")
+                history.pop("val_mape")
+
+            return TrainingHistoryCompat(history)
+
+        def predict(self, X: np.ndarray, verbose: int = 0) -> np.ndarray:
+            self.model.eval()
+            with torch.no_grad():
+                x_tensor = torch.tensor(np.asarray(X, dtype=np.float32), dtype=torch.float32, device=self.device)
+                preds = self.model(x_tensor).cpu().numpy()
+            return preds.astype(np.float64)
+
+        def count_params(self) -> int:
+            return int(sum(p.numel() for p in self.model.parameters() if p.requires_grad))
+
+        def get_layer_stats(self) -> List[Dict[str, Any]]:
+            """Trích xuất thống kê trọng số từng tầng phục vụ src/model_summary.py."""
+            stats = []
+            for name, module, act in self.model.layer_specs:
+                if isinstance(module, nn.Linear):
+                    w = module.weight.detach().cpu().numpy()
+                    b = module.bias.detach().cpu().numpy()
+                    stats.append({
+                        "name": name,
+                        "shape": f"({module.in_features} -> {module.out_features})",
+                        "activation": act,
+                        "params": int(w.size + b.size),
+                        "w_mean": float(np.mean(w)),
+                        "w_std": float(np.std(w)),
+                        "w_l2_norm": float(np.linalg.norm(w)),
+                    })
+                elif isinstance(module, nn.Dropout):
+                    stats.append({
+                        "name": name,
+                        "shape": "(dropout)",
+                        "activation": "none",
+                        "params": 0,
+                        "w_mean": 0.0,
+                        "w_std": 0.0,
+                        "w_l2_norm": 0.0,
+                    })
+            return stats
+
+        def save(self, filepath: Union[str, Path]) -> Path:
+            target_path = Path(filepath)
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            checkpoint = {
+                "format": "LAB04_PYTORCH_MLP_PTH",
+                "state_dict": self.model.state_dict(),
+                "config": {
+                    "input_dim": self.input_dim,
+                    "hidden_units": self.hidden_units,
+                    "hidden_activations": self.hidden_activations,
+                    "output_activation": self.output_activation,
+                    "learning_rate": self.learning_rate,
+                    "l2_lambda": self.l2_lambda,
+                    "dropout_rate": self.dropout_rate,
+                    "random_state": self.random_state,
+                    "architecture_name": self.name,
+                    "total_params": self.count_params(),
+                },
+            }
+            torch.save(checkpoint, target_path)
+            return target_path
+
 
 class TrainingHistoryCompat:
     """
@@ -94,9 +374,9 @@ class NumPySequentialMLP:
           theo đúng kiến trúc `Sequential([Dense(32, relu), Dense(16, relu), Dense(1, linear)])`
           và thuật toán huấn luyện Backpropagation + Adam Optimizer.
     Why: Đảm bảo mạng nơ-ron có thể huấn luyện thực tế, hội tụ thực sự và sinh ra trọng số,
-         đường cong Loss/MAE/MAPE và dự đoán chính xác ngay cả trong môi trường không cài sẵn TensorFlow;
+         đường cong Loss/MAE/MAPE và dự đoán chính xác ngay cả trong môi trường không cài sẵn PyTorch;
          đồng thời tương thích hoàn toàn với giao diện `.compile()`, `.fit()`, `.evaluate()`, `.predict()`
-         và `.save()` của ` keras.Sequential`.
+         và `.save()` của ` PyTorchMLPRegressor`.
     Input:
         - input_dim (int): Số lượng đặc trưng đầu vào ($d = 13$).
         - hidden_units (List[int]): Số nơ-ron ở các tầng ẩn (mặc định `[32, 16]`).
@@ -410,10 +690,12 @@ class NumPySequentialMLP:
         return target_path
 
 
+
 def build_mlp_model(
     input_dim: int,
     config: Optional[Dict[str, Any]] = None,
 ) -> Any:
+    """Khởi tạo mô hình MLP Regression bằng PyTorch (ưu tiên) hoặc NumPySequentialMLP fallback."""
     mlp_cfg = (config or {}).get("mlp_model", {})
     hidden_layers_cfg = mlp_cfg.get(
         "hidden_layers",
@@ -423,44 +705,31 @@ def build_mlp_model(
         ],
     )
     output_cfg = mlp_cfg.get("output_layer", {"units": 1, "activation": "linear", "name": "output_layer"})
-            
+   
     learning_rate = float(mlp_cfg.get("learning_rate", 0.005))
     l2_lambda = float(mlp_cfg.get("l2_lambda", 0.0))
     dropout_rate = float(mlp_cfg.get("dropout_rate", 0.0))
     loss_fn = str(mlp_cfg.get("loss", "mean_squared_error"))
     metrics_list = list(mlp_cfg.get("metrics", ["mae", "mape"]))
     random_state = int((config or {}).get("data", {}).get("random_state", 42))
-
-    if HAS_TENSORFLOW:
-        reg = regularizers.l2(l2_lambda) if l2_lambda > 0.0 else None
-        layers = [Input(shape=(int(input_dim),), name="input_layer")]
-        for idx, layer_info in enumerate(hidden_layers_cfg, start=1):
-            layers.append(
-                Dense(
-                    units=int(layer_info.get("units", 32)),
-                    activation=str(layer_info.get("activation", "relu")),
-                    kernel_regularizer=reg,
-                    name=str(layer_info.get("name", f"hidden_layer_{idx}")),
-                )
-            )
-            if dropout_rate > 0.0:
-                layers.append(Dropout(rate=dropout_rate, name=f"dropout_{idx}"))
-                
-        layers.append(
-            Dense(
-                units=int(output_cfg.get("units", 1)),
-                activation=str(output_cfg.get("activation", "linear")),
-                name=str(output_cfg.get("name", "output_layer")),
-            )
-        )
-        model = Sequential(layers, name=str(mlp_cfg.get("architecture_name", "Sequential_MLP_Regressor")))
-        optimizer = Adam(learning_rate=learning_rate)
-        model.compile(optimizer=optimizer, loss=loss_fn, metrics=metrics_list)
-        return model
+    arch_name = str(mlp_cfg.get("architecture_name", "PyTorch_MLP_Regressor"))
 
     hidden_units = [int(item.get("units", 32)) for item in hidden_layers_cfg]
     hidden_acts = [str(item.get("activation", "relu")) for item in hidden_layers_cfg]
     out_act = str(output_cfg.get("activation", "linear"))
+
+    if HAS_PYTORCH:
+        return PyTorchMLPRegressor(
+            input_dim=int(input_dim),
+            hidden_units=hidden_units,
+            hidden_activations=hidden_acts,
+            output_activation=out_act,
+            learning_rate=learning_rate,
+            l2_lambda=l2_lambda,
+            dropout_rate=dropout_rate,
+            random_state=random_state,
+            architecture_name=arch_name,
+        )
 
     model = NumPySequentialMLP(
         input_dim=int(input_dim),
@@ -468,6 +737,8 @@ def build_mlp_model(
         hidden_activations=hidden_acts,
         output_activation=out_act,
         learning_rate=learning_rate,
+        l2_lambda=l2_lambda,
+        dropout_rate=dropout_rate,
         random_state=random_state,
     )
     model.compile(optimizer="adam", loss=loss_fn, metrics=metrics_list, learning_rate=learning_rate)
@@ -475,9 +746,29 @@ def build_mlp_model(
 
 
 def load_mlp_model(filepath: Union[str, Path], config: Optional[Dict[str, Any]] = None) -> Any:
+    """Nạp mô hình MLP PyTorch đã lưu từ tệp `.pth` (có fallback đọc `.npz`/zip nếu cần)."""
     target_path = Path(filepath)
     if not target_path.exists():
         raise FileNotFoundError(f"Không tìm thấy tệp mô hình MLP tại: {target_path}")
+
+    if HAS_PYTORCH and target_path.suffix.lower() in (".pth", ".pt"):
+        device = get_device()
+        checkpoint = torch.load(target_path, map_location=device, weights_only=False)
+        cfg = checkpoint.get("config", {})
+        regressor = PyTorchMLPRegressor(
+            input_dim=int(cfg.get("input_dim", 13)),
+            hidden_units=list(cfg.get("hidden_units", [32, 16])),
+            hidden_activations=list(cfg.get("hidden_activations", ["relu", "relu"])),
+            output_activation=str(cfg.get("output_activation", "linear")),
+            learning_rate=float(cfg.get("learning_rate", 0.005)),
+            l2_lambda=float(cfg.get("l2_lambda", 0.0)),
+            dropout_rate=float(cfg.get("dropout_rate", 0.0)),
+            random_state=int(cfg.get("random_state", 42)),
+            architecture_name=str(cfg.get("architecture_name", "PyTorch_MLP_Regressor")),
+        )
+        regressor.model.load_state_dict(checkpoint["state_dict"])
+        regressor.model.eval()
+        return regressor
 
     if zipfile.is_zipfile(target_path):
         with zipfile.ZipFile(target_path, "r") as zf:
@@ -487,29 +778,22 @@ def load_mlp_model(filepath: Union[str, Path], config: Optional[Dict[str, Any]] 
                 npz_path = target_path.with_name(target_path.stem + "_weights.npz")
                 if not npz_path.exists():
                     zf.extract("weights.npz", path=target_path.parent)
-                    extracted = target_path.parent / "weights.npz"
-                    extracted.rename(npz_path)
-
+                    (target_path.parent / "weights.npz").rename(npz_path)
                 npz_data = np.load(npz_path)
+                model = NumPySequentialMLP(
+                    input_dim=int(meta.get("input_dim", 13)),
+                    hidden_units=list(meta.get("hidden_units", [32, 16])),
+                    hidden_activations=list(meta.get("hidden_activations", ["relu", "relu"])),
+                    output_activation=str(meta.get("output_activation", "linear")),
+                    learning_rate=float(meta.get("learning_rate", 0.005)),
+                )
                 n_layers = len([k for k in npz_data.files if k.startswith("W_")])
-                weight_list = []
-                for idx in range(n_layers):
-                    weight_list.append(npz_data[f"W_{idx}"])
-                    weight_list.append(npz_data[f"b_{idx}"].ravel())
-
-                model = build_mlp_model(input_dim=int(meta.get("input_dim", 13)), config=config)
-                model.set_weights(weight_list)
+                model.weights = [npz_data[f"W_{i}"].copy() for i in range(n_layers)]
+                model.biases = [npz_data[f"b_{i}"].copy() for i in range(n_layers)]
                 return model
 
-    if HAS_TENSORFLOW:
-        return keras_load_model(target_path)
+    raise RuntimeError(f"Không thể nạp tệp mô hình '{target_path}'. Hãy đảm bảo đã cài PyTorch và huấn luyện lại.")
 
-    raise RuntimeError(f"Không thể đọc tệp mô hình {target_path} khi chưa cài đặt TensorFlow.")
-
-
-# ==============================================================================
-# PHẦN 2: CÁC MÔ HÌNH HỌC MÁY ĐỐI CHIẾU (BASELINE REGRESSION MODELS)
-# ==============================================================================
 
 class LinearRegressionCompat:
     def __init__(self, fit_intercept: bool = True) -> None:
@@ -698,16 +982,8 @@ class RandomForestRegressorCompat:
         rng = np.random.RandomState(self.random_state)
         self.estimators_ = []
         importances_sum = np.zeros(n_features, dtype=np.float64)
-        
-        if self.max_features == "sqrt":
-            effective_max_features = max(1, int(np.sqrt(n_features)))
-        elif self.max_features == "log2":
-            effective_max_features = max(1, int(np.log2(n_features)))
-        elif isinstance(self.max_features, float):
-            effective_max_features = max(1, int(self.max_features * n_features))
-        else:
-            effective_max_features = self.max_features
-            
+        effective_max_features = max(1, int(np.sqrt(n_features))) if self.max_features == "sqrt" else self.max_features
+
         for idx in range(self.n_estimators):
             tree_seed = int(rng.randint(0, 10_000_000))
             boot_indices = rng.choice(n_samples, size=n_samples, replace=True)

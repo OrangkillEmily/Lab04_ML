@@ -11,7 +11,7 @@ Trách nhiệm của module:
 Lưu ý thiết kế: Module này chỉ chứa các hàm tiện ích hạ tầng, tuyệt đối không chứa
 logic nghiệp vụ của EDA, Preprocessing, Model hay Evaluation.
 """
-
+import torch
 import json
 import os
 import pickle
@@ -32,11 +32,10 @@ except ImportError:
     HAS_JOBLIB = False
 
 try:
-    import tensorflow as tf
-    HAS_TENSORFLOW = True
+    import torch
+    HAS_PYTORCH = True
 except ImportError:
-    HAS_TENSORFLOW = False
-
+    HAS_PYTORCH = False
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_CONFIG_PATH = ROOT_DIR / "config.yaml"
@@ -124,20 +123,22 @@ def set_global_seeds(seed: int = 42) -> Dict[str, Any]:
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
-
-    tf_seeded = False
-    if HAS_TENSORFLOW:
+    
+    torch_seeded = False
+    if HAS_PYTORCH:
         try:
-            tf.random.set_seed(seed)
-            tf_seeded = True
+            torch.manual_seed(seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(seed)
+            torch_seeded = True
         except Exception:
-            tf_seeded = False
+            torch_seeded = False
 
     return {
         "seed": seed,
         "python_random": True,
         "numpy_random": True,
-        "tensorflow_random": tf_seeded,
+        "pytorch_random": torch_seeded,
     }
 
 

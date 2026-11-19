@@ -711,7 +711,7 @@ def plot_metric_comparison_bars(
         for idx, val in enumerate(values):
             fmt_str = f"{val:.2f}{suffix}" if suffix == "%" else f"{val:.4f}{suffix}"
             if idx == best_idx:
-                fmt_str += " ★ (Best)"
+                fmt_str += " [Best]"
             labels.append(fmt_str)
 
         ax.bar_label(bars, labels=labels, padding=4, fontsize=10, fontweight="bold")
@@ -728,3 +728,106 @@ def plot_metric_comparison_bars(
         saved_paths.extend(_save_figure_multi_dest(fig, filename, stage_dir))
 
     return saved_paths
+
+# ==============================================================================
+# BIỂU ĐỒ BỔ SUNG: 5-FOLD CROSS-VALIDATION & MLP ARCHITECTURE TUNING
+# ==============================================================================
+
+def plot_kfold_cv_comparison(
+    cv_summary_df: pd.DataFrame,
+    stage_dir: Optional[Path] = None,
+    filename: str = "kfold_cv_comparison.png",
+) -> List[str]:
+    """Vẽ biểu đồ 5-Fold Cross-Validation (CV MSE Mean ± Std và CV R² Mean ± Std)."""
+    if cv_summary_df is None or cv_summary_df.empty:
+        return []
+
+    df = cv_summary_df.copy()
+    models = df["Model"].tolist()
+    colors = [MODEL_PALETTE.get(m, "#475569") for m in models]
+    x = np.arange(len(models))
+
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5.4))
+
+    # Subplot 1: CV MSE (Mean ± Std — Càng thấp càng tốt)
+    mse_mean = df["CV_MSE_Mean"].values.astype(float)
+    mse_std = df["CV_MSE_Std"].fillna(0.0).values.astype(float)
+    best_mse_idx = int(np.argmin(mse_mean))
+    bars1 = axes[0].bar(x, mse_mean, yerr=mse_std, capsize=6, color=colors, edgecolor="black", alpha=0.88, error_kw={"ecolor": "#1e293b", "lw": 1.4})
+    for idx, (bar, m_val, s_val) in enumerate(zip(bars1, mse_mean, mse_std)):
+        lbl = f"{m_val:.2f}±{s_val:.2f}" + (" [Best]" if idx == best_mse_idx else "")
+        axes[0].text(bar.get_x() + bar.get_width() / 2.0, m_val + s_val + max(mse_mean) * 0.03, lbl, ha="center", va="bottom", fontsize=9, fontweight="bold")
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels(models, rotation=12, fontsize=9.5)
+    axes[0].set_ylim(0, max(mse_mean + mse_std) * 1.24)
+    axes[0].set_title("5-Fold CV: Sai số MSE (Mean ± Std — Thấp hơn là tốt hơn)", fontsize=11.5, fontweight="bold")
+    axes[0].set_ylabel("CV MSE ($1,000 USD)²", fontsize=10.5)
+
+    # Subplot 2: CV R² (Mean ± Std — Càng cao càng tốt)
+    r2_mean = df["CV_R2_Mean"].values.astype(float)
+    r2_std = df["CV_R2_Std"].fillna(0.0).values.astype(float)
+    best_r2_idx = int(np.argmax(r2_mean))
+    bars2 = axes[1].bar(x, r2_mean, yerr=r2_std, capsize=6, color=colors, edgecolor="black", alpha=0.88, error_kw={"ecolor": "#1e293b", "lw": 1.4})
+    for idx, (bar, m_val, s_val) in enumerate(zip(bars2, r2_mean, r2_std)):
+        lbl = f"{m_val:.4f}±{s_val:.3f}" + (" [Best]" if idx == best_r2_idx else "")
+        axes[1].text(bar.get_x() + bar.get_width() / 2.0, m_val + s_val + 0.018, lbl, ha="center", va="bottom", fontsize=9, fontweight="bold")
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(models, rotation=12, fontsize=9.5)
+    axes[1].set_ylim(0, min(1.15, max(r2_mean + r2_std) * 1.22))
+    axes[1].set_title("5-Fold CV: Hệ số R² (Mean ± Std — Cao hơn là tốt hơn)", fontsize=11.5, fontweight="bold")
+    axes[1].set_ylabel("CV R² Score", fontsize=10.5)
+
+    fig.suptitle("Đánh giá 5-Fold Cross-Validation trên 506 mẫu (Chống rò rỉ dữ liệu từng Fold)", fontsize=13, fontweight="bold", y=1.02)
+    fig.tight_layout()
+    return _save_figure_multi_dest(fig, filename, stage_dir)
+
+
+def plot_mlp_architecture_tuning(
+    arch_tuning_df: pd.DataFrame,
+    stage_dir: Optional[Path] = None,
+    filename: str = "mlp_architecture_tuning.png",
+) -> List[str]:
+    """Vẽ biểu đồ đối sánh 4 kiến trúc MLP (Train/Val/Test MSE và Test R² vs Total Params)."""
+    if arch_tuning_df is None or arch_tuning_df.empty:
+        return []
+
+    df = arch_tuning_df.copy()
+    short_names = [str(a).split(" ")[0] for a in df["Architecture"]]
+    params = df["Total_Params"].values.astype(int)
+    x_labels = [f"{n}\n({p:,} params)" for n, p in zip(short_names, params)]
+    x = np.arange(len(df))
+    w = 0.25
+
+    fig, axes = plt.subplots(1, 2, figsize=(14.5, 5.4))
+
+    # Subplot 1: Grouped Bar Chart (Train MSE vs Val MSE vs Test MSE)
+    b_tr = axes[0].bar(x - w, df["Train_MSE"].values, width=w, label="Train MSE", color="#64748b", edgecolor="black", alpha=0.88)
+    b_va = axes[0].bar(x, df["Val_MSE"].values, width=w, label="Validation MSE", color="#f59e0b", edgecolor="black", alpha=0.88)
+    b_te = axes[0].bar(x + w, df["Test_MSE"].values, width=w, label="Test MSE", color="#1d4ed8", edgecolor="black", alpha=0.92)
+    for bars in (b_tr, b_va, b_te):
+        axes[0].bar_label(bars, fmt="%.2f", padding=3, fontsize=8.5, fontweight="bold")
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels(x_labels, fontsize=9)
+    axes[0].set_ylim(0, float(df[["Train_MSE", "Val_MSE", "Test_MSE"]].values.max()) * 1.22)
+    axes[0].set_title("Bias–Variance Trade-off: Train vs Val vs Test MSE (↓)", fontsize=11.5, fontweight="bold")
+    axes[0].set_ylabel("Mean Squared Error (MSE)", fontsize=10.5)
+    axes[0].legend(frameon=True, fontsize=9.5)
+
+    # Subplot 2: Test R² theo từng kiến trúc MLP
+    r2_vals = df["Test_R2"].values.astype(float)
+    best_idx = int(np.argmax(r2_vals))
+    bar_colors = ["#059669" if i == best_idx else "#2563eb" for i in range(len(df))]
+    bars_r2 = axes[1].bar(x, r2_vals, width=0.52, color=bar_colors, edgecolor="black", alpha=0.90)
+    for idx, (bar, val) in enumerate(zip(bars_r2, r2_vals)):
+        lbl = f"{val:.4f}" + (" [Best]" if idx == best_idx else "")
+        axes[1].text(bar.get_x() + bar.get_width() / 2.0, val + 0.012, lbl, ha="center", va="bottom", fontsize=9.5, fontweight="bold")
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(x_labels, fontsize=9)
+    axes[1].set_ylim(0, min(1.05, max(r2_vals) * 1.18))
+    axes[1].set_title("Hiệu năng Tổng quát hóa trên Tập Test theo Kiến trúc MLP (R² ↑)", fontsize=11.5, fontweight="bold")
+    axes[1].set_ylabel("Test R² Score", fontsize=10.5)
+
+    fig.suptitle("Tuning Kiến trúc Mạng PyTorch MLP (So sánh Độ sâu, Độ rộng & Số tham số)", fontsize=13, fontweight="bold", y=1.02)
+    fig.tight_layout()
+    return _save_figure_multi_dest(fig, filename, stage_dir)
+

@@ -13,7 +13,7 @@ Trách nhiệm của module:
    - `Decision Tree Regressor`
    - `Random Forest Regressor`
 5. Đo thời gian huấn luyện thực tế của từng mô hình và lưu toàn bộ artifacts:
-   - `models/mlp_regression.keras` (cùng `models/mlp_regression_weights.npz`)
+   - `models/mlp_regression.pth` (cùng `models/mlp_regression_weights.npz`)
    - `models/linear_regression.pkl`
    - `models/decision_tree.pkl`
    - `models/random_forest.pkl`
@@ -29,12 +29,6 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 import pandas as pd
-
-try:
-    from keras.callbacks import EarlyStopping
-    HAS_TENSORFLOW = True
-except ImportError:
-    HAS_TENSORFLOW = False
 
 from src.model import build_baseline_models, build_mlp_model, get_backend_info
 from src.tracking import create_run, finish_run, update_progress, write_log
@@ -113,7 +107,7 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
         1. Nạp cấu hình từ `config.yaml` và cố định random seed.
         2. Đọc các tập `X_train_sub`, `X_val_scaled`, `X_train_scaled`.
         3. Khởi tạo và huấn luyện mô hình MLP (`epochs=100`, `batch_size=32`, `EarlyStopping`).
-        4. Lưu mô hình MLP vào `models/mlp_regression.keras` và lịch sử vào `models/mlp_training_history.csv`.
+        4. Lưu mô hình MLP vào `models/mlp_regression.pth` và lịch sử vào `models/mlp_training_history.csv`.
         5. Khởi tạo và huấn luyện `Linear Regression`, `Decision Tree`, `Random Forest` trên tập Train.
         6. Lưu các mô hình baseline (`.pkl`), vẽ biểu đồ huấn luyện và cập nhật tracking.
     """
@@ -162,43 +156,21 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
         mlp_model = build_mlp_model(input_dim=input_dim, config=config)
 
         mlp_start = time.perf_counter()
-        if HAS_TENSORFLOW and hasattr(mlp_model, "layers"):
-            callbacks = []
-            if es_cfg.get("enabled", True):
-                callbacks.append(
-                    EarlyStopping(
-                        monitor=str(es_cfg.get("monitor", "val_loss")),
-                        patience=int(es_cfg.get("patience", 15)),
-                        restore_best_weights=bool(es_cfg.get("restore_best_weights", True)),
-                        min_delta=float(es_cfg.get("min_delta", 0.001)),
-                    )
-                )
-            history_obj = mlp_model.fit(
-                X_train_sub,
-                y_train_sub,
-                epochs=epochs,
-                batch_size=batch_size,
-                validation_data=(X_val_scaled, y_val),
-                callbacks=callbacks,
-                verbose=0,
-            )
-            best_epoch = int(np.argmin(history_obj.history["val_loss"]) + 1)
-        else:
-            history_obj = mlp_model.fit(
-                X_train_sub,
-                y_train_sub,
-                epochs=epochs,
-                batch_size=batch_size,
-                validation_data=(X_val_scaled, y_val),
-                early_stopping_cfg=es_cfg,
-                verbose=0,
-            )
-            best_epoch = int(getattr(mlp_model, "best_epoch_", len(history_obj.history["loss"])))
+        history_obj = mlp_model.fit(
+            X_train_sub,
+            y_train_sub,
+            epochs=epochs,
+            batch_size=batch_size,
+            validation_data=(X_val_scaled, y_val),
+            early_stopping_cfg=es_cfg,
+            verbose=0,
+        )
+        best_epoch = int(getattr(mlp_model, "best_epoch_", int(np.argmin(history_obj.history["val_loss"]) + 1)))
 
         mlp_elapsed = round(time.perf_counter() - mlp_start, 4)
         training_times["MLP Regression"] = mlp_elapsed
 
-        mlp_save_path = MODEL_DIR / "mlp_regression.keras"
+        mlp_save_path = MODEL_DIR / "mlp_regression.pth"
         mlp_model.save(mlp_save_path)
 
         history_dict = {
@@ -246,7 +218,7 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
                 "best_val_mse": float(min(history_dict["val_loss"])),
                 "best_val_mae": float(min(history_dict["val_mae"])),
                 "training_time_seconds": mlp_elapsed,
-                "saved_model": "models/mlp_regression.keras",
+                "saved_model": "models/mlp_regression.pth",
             },
         )
         write_log(
@@ -336,7 +308,7 @@ def main(run_id: Optional[str] = None) -> Dict[str, Any]:
             },
             "training_times_seconds": training_times,
             "saved_models": [
-                "models/mlp_regression.keras",
+                "models/mlp_regression.pth",
                 "models/linear_regression.pkl",
                 "models/decision_tree.pkl",
                 "models/random_forest.pkl",
