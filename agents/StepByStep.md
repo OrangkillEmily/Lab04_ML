@@ -29,7 +29,7 @@
 [4. TRAINING]        src/train.py
        │             Huấn luyện MLP (323 mẫu Train_sub, giám sát trên 81 mẫu Val)
        │             Huấn luyện Linear Regression, Decision Tree, Random Forest
-       │             Lưu models/*.keras, models/*.pkl, vẽ Biểu đồ 4 & 5
+       │             Lưu models/*.pytorch, models/*.pkl, vẽ Biểu đồ 4 & 5
        ▼
 [5. EVALUATION]      src/evaluate.py
        │             Đánh giá cả 4 mô hình trên tập Test (102 mẫu độc lập)

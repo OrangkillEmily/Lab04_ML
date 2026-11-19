@@ -32,7 +32,7 @@ Dự án sử dụng bộ dữ liệu **Boston Housing Dataset** (Harrison & Rub
 4. **Random Forest Regression** (*Mô hình đối chiếu 3*): Rừng ngẫu nhiên hồi quy (`n_estimators=100, max_depth=10`).
 
 ## 4. Quy trình Thực hiện Chuẩn (6 Nhiệm vụ của Practice Exercise 4)
-1. **Import Necessary Libraries**: Nạp `pandas`, `numpy`, `matplotlib`, `seaborn`, `scikit-learn` (`train_test_split`, `StandardScaler`, baseline regressors) và `tensorflow.keras` (`Sequential`, `Dense`).
+1. **Import Necessary Libraries**: Nạp `pandas`, `numpy`, `matplotlib`, `seaborn`, `scikit-learn` (`train_test_split`, `StandardScaler`, baseline regressors) và `pytorch`.
 2. **Load and Preprocess the Data**: Đọc dữ liệu từ `data/raw/boston_housing.csv`, tách `X` và `y`, chia `Train/Test` (80/20), khớp `StandardScaler` chỉ trên tập `Train` và biến đổi `Train`/`Test`, sau đó tách `Validation` (20% của `Train`) để giám sát MLP.
 3. **Create a Multilayer Perceptron Model**: Khởi tạo mô hình `Sequential` với 2 tầng ẩn `ReLU` (32 và 16 nơ-ron) và tầng đầu ra `Linear` (1 nơ-ron), biên dịch với `Adam` và `MSE`.
 4. **Train the Model**: Huấn luyện MLP trên tập `Train_sub` kết hợp theo dõi `MSE` và `MAE` trên tập `Validation` cùng cơ chế `EarlyStopping`.
