@@ -2,9 +2,9 @@
 
 ## 1. Purpose — Mục đích
 
-**Decision Tree Regression (`DecisionTreeRegressor` — Thuật toán CART)** đóng vai trò là **Mô hình Đối chiếu Cơ sở Số 2 (`Baseline Model 2`)** trong dự án Lab 04.
+**Decision Tree Regression (`DecisionTreeRegressor` — Thuật toán CART)** đóng vai trò là **Mô hình Đối chiếu Cơ sở Số 2 (`Baseline Model 2`)** trong dự án Lab 04 (`LAB04_MLP_Regression — PyTorch Edition`).
 
-Khác với `Linear Regression` (dùng siêu phẳng toàn cục) và `MLP Regression` (dùng mặt cong trơn tạo bởi các tầng ẩn `ReLU`), `Decision Tree Regression` tiếp cận bài toán dự đoán giá nhà bằng cách **phân hoạch đệ quy không gian 13 đặc trưng thành các hình hộp chữ nhật rời rạc** (axis-aligned regions) và dự đoán giá nhà tại mỗi nút lá bằng giá trị trung bình của các mẫu rơi vào vùng đó.
+Khác với `Linear Regression` (dùng siêu phẳng toàn cục) và `PyTorch MLP Regression` (dùng mặt cong trơn tạo bởi các tầng ẩn `ReLU`), `Decision Tree Regression` tiếp cận bài toán dự đoán giá nhà bằng cách **phân hoạch đệ quy không gian 13 đặc trưng thành các hình hộp chữ nhật rời rạc** (*axis-aligned regions*) và dự đoán giá nhà tại mỗi nút lá bằng giá trị trung bình của các mẫu rơi vào vùng đó.
 
 ## 2. Input — Output
 
@@ -12,18 +12,18 @@ Khác với `Linear Regression` (dùng siêu phẳng toàn cục) và `MLP Regre
 
 | Input | Description |
 |---|---|
-| `X_train_scaled` `(404, 13)`, `y_train` `(404,)` | Ma trận 13 đặc trưng và vector giá nhà của tập Huấn luyện |
-| `X_test_scaled` `(102, 13)`, `y_test` `(102,)` | Ma trận đặc trưng và nhãn giá nhà của tập Kiểm tra độc lập |
+| `X_train_scaled` `(404, 13)`, `y_train` `(404,)` | Ma trận 13 đặc trưng đã chuẩn hóa (`StandardScaler` chỉ `fit` trên tập Train) và vector giá nhà của tập Huấn luyện |
+| `X_test_scaled` `(102, 13)`, `y_test` `(102,)` | Ma trận đặc trưng và nhãn giá nhà của tập Kiểm tra độc lập (`Hold-out Test`) |
 | `config.yaml -> baseline_models.decision_tree` | Siêu tham số kiểm soát độ sâu: `max_depth = 6`, `min_samples_split = 5`, `min_samples_leaf = 2`, `random_state = 42` |
 
 ### Output
 
 | Output | Description |
 |---|---|
-| `Predicted MEDV` ($\hat{\mathbf{y}} \in \mathbb{R}^{N}$) | Giá trị nhà dự đoán theo hàm bậc thang từng khúc tại các nút lá |
+| `Predicted MEDV` ($\hat{\mathbf{y}} \in \mathbb{R}^{N}$) | Giá trị nhà dự đoán theo hàm bậc thang từng khúc tại các nút lá (`34` nút lá) |
 | `models/decision_tree.pkl` | Tệp lưu trữ cấu trúc cây nhị phân đã học và vector mức độ quan trọng đặc trưng `feature_importances_` |
 
-### Bảng Mức độ Quan trọng Đặc trưng (`feature_importances_` — Khớp 100% với Cell 14 `lab04.ipynb`)
+### Bảng Mức độ Quan trọng Đặc trưng (`feature_importances_` — Khớp 100% với Cell 40 `lab04.ipynb`)
 
 | Hạng | Feature | Feature_Importance | Tỷ trọng Đóng góp (%) | Ý nghĩa trong Cấu trúc Phân nhánh CART |
 |---:|---|---:|---:|---|
@@ -57,60 +57,40 @@ Khác với `Linear Regression` (dùng siêu phẳng toàn cục) và `MLP Regre
         Split Node if depth < 6, N_P >= 5, N_L >= 2, N_R >= 2
                           |
                           v
-        Assign Leaf Value = Mean(y_i) in Region R_m
+        Assign Leaf Value = Mean(y_i) in Region R_m (34 Leaves)
                           |
                           v
-        Save Model -> models/decision_tree.pkl
-                          |
-                          v
-        Route Test Samples (102) Down the Tree -> Predict y_hat
+      Save models/decision_tree.pkl -> Predict on Test (102)
 ```
 
-### Các bước thực hiện
+### Công thức Toán học Cốt lõi
 
-**Step 1 — Tiêu chuẩn Phân nhánh Giảm Phương sai (CART Variance / MSE Reduction)**
+1. **Tiêu chuẩn phân nhánh CART (Giảm phương sai MSE)**:
+   $$\Delta \text{MSE}(j, t) = \text{MSE}(P) - \left(\frac{N_L}{N_P}\text{MSE}(L) + \frac{N_R}{N_P}\text{MSE}(R)\right)$$
+2. **Hàm dự đoán tại nút lá $R_m$**:
+   $$\hat{y}(\mathbf{x}) = \sum_{m=1}^{34} c_m \cdot \mathbb{I}(\mathbf{x} \in R_m), \qquad c_m = \frac{1}{|R_m|}\sum_{\mathbf{x}_i \in R_m} y_i$$
 
-Tại mỗi nút cha $P$ chứa tập mẫu $S_P$, thuật toán duyệt qua từng đặc trưng $j \in \{1, \dots, 13\}$ và điểm cắt $t$ để chia $S_P$ thành nhánh trái $S_L = \{i \in S_P : x_{i,j} \le t\}$ và nhánh phải $S_R = \{i \in S_P : x_{i,j} > t\}$ sao cho tổng bình phương sai số sau khi chia giảm nhiều nhất:
+## 4. Kết quả Thực nghiệm & Đối chiếu (`lab04.ipynb`)
 
-$$\Delta \text{MSE}(j, t) = \text{MSE}(S_P) - \left(\frac{|S_L|}{|S_P|}\text{MSE}(S_L) + \frac{|S_R|}{|S_P|}\text{MSE}(S_R)\right)$$
+### 4.1. Hiệu suất trên Tập Test (`102` mẫu — Cell 40, 46, 49) & 5-Fold Cross-Validation (`506` mẫu — Cell 52)
 
-trong đó $\text{MSE}(S) = \frac{1}{|S|}\sum_{i \in S}(y_i - \bar{y}_S)^2$.
+| Nhóm Đánh giá | MSE | RMSE | MAE | MAPE (%) | $R^2$ | Max Error | Thời gian Huấn luyện |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **Hold-out Test (`102` mẫu)** | `10.5431` | `3.2470` | `2.5192` | `13.8809%` | `0.8562` | `10.6500` | `0.0073s` |
+| **5-Fold CV (`506` mẫu, Mean ± Std)** | `18.3829 ± 11.6161` | `4.1529` | `2.8782` | `14.5435%` | `0.7832 ± 0.1212` | — | — |
 
-**Step 2 — Điều kiện Dừng & Cắt tỉa Trước (Pre-pruning Hyperparameters)**
+### 4.2. Thống kê Chẩn đoán `Model Summary` (Cell 63)
 
-Để ngăn cây học thuộc lòng nhiễu (Overfitting), quá trình chia nhánh dừng lại khi chạm một trong các ngưỡng từ `config.yaml`: chiều sâu đạt `max_depth = 6`, số mẫu tại nút nhỏ hơn `min_samples_split = 5`, hoặc nhánh con tạo ra có ít hơn `min_samples_leaf = 2` mẫu.
+| Chỉ số Chẩn đoán | Giá trị Thực nghiệm | Nhận xét |
+|---|---:|---|
+| **Độ sâu thực tế / Số nút lá** | `6` / `34` | Tuân thủ đúng giới hạn `max_depth = 6` |
+| **Train $R^2$** | `0.9229` | Học rất khớp trên tập Train (`404` mẫu) |
+| **Log-Likelihood / AIC / BIC** | `-957.309` / `1942.619` / `1998.639` | Tốt hơn `Linear Regression` và `MLP` trên mẫu Train |
+| **F-statistic** | `359.308` ($p = 0.0$) | Có ý nghĩa thống kê cao |
+| **Durbin-Watson / Ljung-Box $Q$** | `1.960` / `0.12` ($p = 0.73$) | Phần dư không có tự tương quan |
+| **Jarque-Bera (Skew / Kurtosis)** | `457.53` (`-0.83` / `7.94`) | Độ nhọn cao do cấu trúc dự đoán bậc thang |
+| **Within ±$3k USD (Test Set — Cell 60)** | `68.63%` | Thấp hơn `MLP Regression` (`76.47%`) và `Random Forest` (`81.37%`) |
 
-**Step 3 — Dự đoán tại Nút Lá (Leaf Prediction)**
-
-Khi toàn bộ không gian được chia thành $M$ vùng lá $R_1, R_2, \dots, R_M$, giá trị dự đoán cho bất kỳ mẫu $\mathbf{x}$ nào rơi vào vùng $R_m$ là trung bình cộng nhãn của các mẫu huấn luyện trong vùng đó:
-
-$$\hat{f}(\mathbf{x}) = \sum_{m=1}^{M} c_m \mathbb{I}(\mathbf{x} \in R_m), \qquad c_m = \frac{1}{|R_m|}\sum_{i \in R_m} y_i$$
-
-## 4. Evaluation metrics
-| Metric | Giá trị trên Tập Test (`102` mẫu) | Giá trị trên Tập Train (`404` mẫu) | Nhận xét & Đối chiếu với `MLP Regression` |
-| :--- | :---: | :---: | :--- |
-| **MSE (↓)** | **`10.5431` (Best Hold-out)** | `6.6944` | Đạt MSE thấp nhất trên phép chia Hold-out `random_state=42` nhờ kiểm soát tốt `Max_Error` (`10.65`) |
-| **RMSE (↓)** | **`$3.2470k` (Best Hold-out)** | `$2.5874k` | Nhỉnh hơn trên 102 mẫu Test nhưng kém ổn định khi đổi tập chia |
-| **MAE (↓)** | **`$2.5192k`** | `$1.9563k` | **Kém hơn `MLP Regression` (`$2.2868k`)** và `Random Forest` (`$2.0994k`) do dự đoán bậc thang rời rạc |
-| **MAPE (↓)** | **`13.8809%` (`13.88%`)** | `9.6020%` | **Kém hơn `MLP Regression` (`11.71%`)** tới `2.17` điểm phần trăm và kém hơn `Random Forest` (`10.82%`) |
-| **$R^2$ Score (↑)** | **`0.8562` (`85.62%`)** | `0.9229` | Giải thích `85.62%` phương sai trên tập Hold-out Test |
-| **5-Fold Cross-Validation** | `CV MSE = 18.3829 ± 11.6161` | `CV R² = 0.7832 ± 0.1212` | **Phương sai rất lớn Across Folds** — kém xa `MLP Regression` (`CV R² = 0.8607 ± 0.0459`) |
-| **Within $\pm\$3,000	ext{ USD}$ (↑)** | **`68.63%`** | — | **Thấp hơn `MLP Regression` (`75.49%`)** và `Random Forest` (`81.37%`) |
-| **TrainingTime** | **`0.0047s`** | — | Tốc độ huấn luyện rất nhanh trên dữ liệu bảng nhỏ |
-
-> **Phân tích học thuật quan trọng:** Trên phép chia Hold-out đơn lẻ (`random_state=42`), `Decision Tree` có `MSE` thấp (`10.5431`) nhưng `MAE` (`2.5192`) và `MAPE` (`13.88%`) đều kém hơn `MLP Regression` (`MAE = 2.2868`, `MAPE = 11.71%`). Đặc biệt, khi kiểm định bằng **5-Fold Cross-Validation**, `Decision Tree` tụt xuống hạng 3 với `CV MSE = 18.3829 ± 11.6161` (`CV R² = 0.7832`), chứng minh một cây đơn lẻ rất nhạy với cách chia dữ liệu, trong khi **`MLP Regression` ổn định và dẫn đầu 5-Fold CV (`CV R² = 0.8607 ± 0.0459`)**.
-
-## 5. Used data
-| Tập dữ liệu | Số mẫu | Kích thước | Vai trò đối với `Decision Tree Regression` |
-| :--- | :---: | :---: | :--- |
-| `X_train_scaled`, `y_train` | `404` | `(404, 13)` | Tìm các ngưỡng phân nhánh $(j, t)$, tính giá trị trung bình tại `34` nút lá và đánh giá 5-Fold CV |
-| `X_test_scaled`, `y_test` | `102` | `(102, 13)` | Đánh giá độc lập 5 chỉ số hồi quy trên dữ liệu chưa từng thấy |
-
-## Code References
-
-| File | Responsibility |
-|---|---|
-| `src/model.py` (`build_baseline_models`, `DecisionTreeRegressorCompat`) | Khởi tạo `DecisionTreeRegressor` với cấu hình từ `config.yaml` |
-| `src/train.py` | Huấn luyện cây quyết định và lưu `models/decision_tree.pkl` |
-| `src/evaluate.py` | Đánh giá 5 chỉ số của `Decision Tree` trên tập Train và tập Test |
-| `notebooks/lab04.ipynb` (Mục 14, 16, 17, 19) | Trích xuất `feature_importances_` và đối sánh chi tiết với `MLP Regression` |
+### 4.3. Phân tích Chuyên sâu: Nghịch lý Hold-out Test vs. 5-Fold Cross-Validation
+- **Trên Hold-out Test (`102` mẫu)**: `Decision Tree` đạt `Test MSE = 10.5431` và `Test R² = 0.8562` (tốt nhất theo `MSE` và `R²` trên phép chia này, với `Max_Error = 10.6500`), nhưng `MAPE = 13.88%` và `Within ±$3k = 68.63%` lại kém hơn `MLP Regression` (`MAPE = 12.09%`, `Within ±$3k = 76.47%`).
+- **Trên 5-Fold Cross-Validation (`506` mẫu — Cell 52)**: Độ bất ổn của một cây đơn lẻ bộc lộ rõ với `CV_MSE = 18.3829 ± 11.6161` và `CV_R² = 0.7832 ± 0.1212` (độ lệch chuẩn lớn gấp `4.2` lần `PyTorch MLP` và `5.8` lần `Random Forest`). Điều này chứng minh `Decision Tree` đơn lẻ rất nhạy với cách chia dữ liệu, và đó là lý do cần kiểm định chéo thay vì chỉ dựa vào một tập Test cố định.

@@ -89,7 +89,7 @@ LAB04_MLP_Regression/
 └── reports/
     ├── LAB_04_REPORT.html             # Báo cáo HTML tương tác theo sơ đồ luồng (Flow Map + 07 Stages)
     ├── experiment_summary.md          # Báo cáo tổng hợp thực nghiệm của phiên chạy mới nhất
-    ├── figures/                       # Kho lưu trữ tập trung 16 biểu đồ chuẩn (Single Source of Truth)
+    ├── figures/                       # Kho lưu trữ tập trung 18 biểu đồ chuẩn (Single Source of Truth)
     ├── metrics/                       # Các tệp JSON & CSV (test_metrics, eda_outlier, kfold_cv, mlp_tuning, model_summary)
     └── predictions/                   # Kết quả dự đoán chi tiết trên 102 mẫu kiểm tra
 ```

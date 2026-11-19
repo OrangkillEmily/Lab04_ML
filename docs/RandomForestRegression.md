@@ -2,9 +2,9 @@
 
 ## 1. Purpose — Mục đích
 
-**Random Forest Regression (`RandomForestRegressor` — Leo Breiman, 2001)** đóng vai trò là **Mô hình Đối chiếu Cơ sở Số 3 (`Baseline Model 3`)** đại diện cho phương pháp Học máy Tổ hợp (*Ensemble Learning — Bootstrap Aggregating / Bagging*) trong dự án Lab 04.
+**Random Forest Regression (`RandomForestRegressor` — Học tập hợp Bagging)** đóng vai trò là **Mô hình Đối chiếu Cơ sở Số 3 (`Baseline Model 3`)** trong dự án Lab 04 (`LAB04_MLP_Regression — PyTorch Edition`).
 
-Mục đích của `Random Forest` là khắc phục nhược điểm phương sai cao (*high variance*) và hàm dự đoán bậc thang thô của một cây quyết định `Decision Tree` đơn lẻ bằng cách huấn luyện song song **$B = 100$ cây quyết định độc lập** trên các mẫu Bootstrap khác nhau kết hợp lấy mẫu ngẫu nhiên tập con đặc trưng tại mỗi nút phân nhánh (`max_features = 'sqrt'`), sau đó lấy trung bình cộng dự đoán của cả 100 cây.
+Khắc phục nhược điểm phương sai lớn (*high variance*) của một cây quyết định đơn lẻ (`Decision Tree`), `Random Forest` huấn luyện song song **100 cây quyết định độc lập (`n_estimators = 100`)** trên các tập con lấy mẫu có hoàn lại (*Bootstrap Sampling*) và chọn ngẫu nhiên tập con đặc trưng tại mỗi điểm chia (`max_features = 'sqrt'`), sau đó lấy **trung bình cộng** dự đoán của cả 100 cây để tạo ra đường biên dự đoán mượt và ổn định hơn.
 
 ## 2. Input — Output
 
@@ -12,28 +12,28 @@ Mục đích của `Random Forest` là khắc phục nhược điểm phương s
 
 | Input | Description |
 |---|---|
-| `X_train_scaled` `(404, 13)`, `y_train` `(404,)` | Ma trận 13 đặc trưng và vector giá nhà của tập Huấn luyện (`404` mẫu) |
-| `X_test_scaled` `(102, 13)`, `y_test` `(102,)` | Ma trận đặc trưng và nhãn giá nhà của tập Kiểm tra độc lập (`102` mẫu) |
-| `config.yaml -> baseline_models.random_forest` | Cấu hình tổ hợp: `n_estimators = 100`, `max_depth = 10`, `min_samples_split = 4`, `min_samples_leaf = 2`, `max_features = 'sqrt'`, `random_state = 42` |
+| `X_train_scaled` `(404, 13)`, `y_train` `(404,)` | Ma trận 13 đặc trưng đã chuẩn hóa (`StandardScaler` chỉ `fit` trên tập Train) và vector giá nhà của tập Huấn luyện |
+| `X_test_scaled` `(102, 13)`, `y_test` `(102,)` | Ma trận đặc trưng và nhãn giá nhà của tập Kiểm tra độc lập (`Hold-out Test`) |
+| `config.yaml -> baseline_models.random_forest` | Siêu tham số tập hợp: `n_estimators = 100`, `max_depth = 10`, `max_features = "sqrt"`, `random_state = 42` |
 
 ### Output
 
 | Output | Description |
 |---|---|
-| `Predicted MEDV` ($\hat{\mathbf{y}} \in \mathbb{R}^{N}$) | Giá trị nhà dự đoán bằng trung bình cộng dự đoán của 100 cây quyết định |
-| `models/random_forest.pkl` | Tệp lưu trữ quần thể `100` cây quyết định (`estimators_`) và vector `feature_importances_` |
+| `Predicted MEDV` ($\hat{\mathbf{y}} \in \mathbb{R}^{N}$) | Giá trị nhà dự đoán bằng trung bình cộng đầu ra của 100 cây quyết định |
+| `models/random_forest.pkl` | Tệp lưu trữ 100 cây quyết định (`Mean Depth = 10.0`, `Mean Leaves/Tree = 90.3`) và `feature_importances_` |
 
-### Bảng Mức độ Quan trọng Đặc trưng Trung bình trên 100 Cây (Khớp 100% với Cell 15 `lab04.ipynb`)
+### Bảng Mức độ Quan trọng Đặc trưng (`feature_importances_` — Khớp 100% với Cell 43 `lab04.ipynb`)
 
-| Hạng | Feature | Feature_Importance | Tỷ trọng Đóng góp (%) | Sự khác biệt so với Cây Quyết định Đơn lẻ (`Decision Tree`) |
+| Hạng | Feature | Feature_Importance | Tỷ trọng Đóng góp (%) | So sánh với `Decision Tree` |
 |---:|---|---:|---:|---|
-| 1 | **RM** | **`0.2955`** | `29.55%` | Không bị phụ thuộc độc tôn (62.78% ở DT), chia sẻ vai trò cho các biến khác |
-| 2 | **LSTAT** | **`0.2324`** | `23.24%` | Đóng góp ổn định trên toàn bộ 100 cây quyết định |
-| 3 | **NOX** | **`0.0888`** | `8.88%` | Khai thác hiệu quả tác động của mức độ ô nhiễm môi trường (ở DT chỉ 0.58%) |
-| 4 | **INDUS** | **`0.0754`** | `7.54%` | Khai thác thông tin quy hoạch khu công nghiệp |
-| 5 | **PTRATIO** | **`0.0673`** | `6.73%` | Phản ánh chất lượng giáo dục khu vực (tăng từ 1.59% ở DT lên 6.73%) |
-| 6 | **CRIM** | **`0.0658`** | `6.58%` | Phản ánh mức độ an ninh đô thị |
-| 7 | **DIS** | `0.0588` | `5.88%` | Khoảng cách tới các trung tâm việc làm |
+| 1 | **RM** | **`0.2955`** | `29.55%` | Phân tán trọng số hợp lý hơn (giảm từ `62.78%` nhờ `max_features='sqrt'`) |
+| 2 | **LSTAT** | **`0.2324`** | `23.24%` | Đặc trưng kinh tế-xã hội quan trọng thứ hai (`23.24%` vs `19.57%`) |
+| 3 | **NOX** | **`0.0888`** | `8.88%` | Nồng độ khí Nitơ Oxit được khai thác sâu hơn ở nhiều cây |
+| 4 | **INDUS** | **`0.0754`** | `7.54%` | Tỷ lệ diện tích công nghiệp phi bán lẻ |
+| 5 | **PTRATIO** | **`0.0673`** | `6.73%` | Tỷ lệ học sinh / giáo viên |
+| 6 | **CRIM** | `0.0658` | `6.58%` | Tỷ lệ tội phạm bình quân đầu người |
+| 7 | **DIS** | `0.0588` | `5.88%` | Khoảng cách tới 5 trung tâm việc làm tại Boston |
 | 8 | **TAX** | `0.0353` | `3.53%` | Thuế suất bất động sản |
 
 ## 3. How to do — Quy trình thực hiện & Cơ sở toán học
@@ -41,75 +41,54 @@ Mục đích của `Random Forest` là khắc phục nhược điểm phương s
 ### Random Forest Regression workflow
 
 ```text
-          X_train_scaled (404, 13) + y_train (404,)
-                              |
-         +--------------------+--------------------+
-         |                    |                    |
-         v                    v                    v
-   Bootstrap Sample 1   Bootstrap Sample b   Bootstrap Sample 100
-    (404 rows w/ rep)    (404 rows w/ rep)    (404 rows w/ rep)
-         |                    |                    |
-         v                    v                    v
-    Grow Tree T_1(x)     Grow Tree T_b(x)    Grow Tree T_100(x)
-   (max_depth = 10,     (max_depth = 10,     (max_depth = 10,
-    sqrt(13)=3 feats)    sqrt(13)=3 feats)    sqrt(13)=3 feats)
-         |                    |                    |
-         +--------------------+--------------------+
-                              |
-                              v
-             Save Ensemble -> models/random_forest.pkl
-                              |
-                              v
-             Aggregate Predictions on Test Set (102):
-             y_hat(x) = (1 / 100) * sum_{b=1}^{100} T_b(x)
+      X_train_scaled (404, 13) + y_train (404,)
+                          |
+        +-----------------+-----------------+
+        v                 v                 v
+  Bootstrap_1       Bootstrap_2  ...  Bootstrap_100
+        |                 |                 |
+        v                 v                 v
+  Tree_1 (sqrt)     Tree_2 (sqrt) ... Tree_100 (sqrt)
+  (max_depth=10)    (max_depth=10)    (max_depth=10)
+        |                 |                 |
+        +-----------------+-----------------+
+                          |
+                          v
+      Average Predictions: y_hat = (1/100) * Sum(T_b(x))
+                          |
+                          v
+      Save models/random_forest.pkl -> Predict on Test (102)
 ```
 
-### Các bước thực hiện
+### Công thức Toán học Cốt lõi
 
-**Step 1 — Lấy mẫu Bootstrap (Bootstrap Resampling)**
+1. **Hàm dự đoán tập hợp (Bagging Ensemble)**:
+   $$\hat{y}_{\text{RF}}(\mathbf{x}) = \frac{1}{B} \sum_{b=1}^{B} T_b(\mathbf{x}), \qquad B = 100$$
+2. **Giảm phương sai nhờ lấy trung bình $B$ cây có tương quan $\rho$**:
+   $$\text{Var}\left(\frac{1}{B}\sum_{b=1}^B T_b(\mathbf{x})\right) = \rho \sigma^2 + \frac{1 - \rho}{B}\sigma^2$$
+   Cơ chế chọn ngẫu nhiên `sqrt(13)` đặc trưng tại mỗi nút chia giúp làm giảm hệ số tương quan $\rho$ giữa các cây, từ đó giảm mạnh phương sai dự đoán trên dữ liệu mới.
 
-Từ tập huấn luyện gốc $\mathcal{D}_{\text{train}}$ gồm $N = 404$ mẫu, thuật toán rút ngẫu nhiên có hoàn lại (*sampling with replacement*) $B = 100$ tập dữ liệu con $\mathcal{D}_1, \mathcal{D}_2, \dots, \mathcal{D}_{100}$, mỗi tập có kích thước $404$ mẫu.
+## 4. Kết quả Thực nghiệm & Đối chiếu (`lab04.ipynb`)
 
-**Step 2 — Xây dựng Cây với Không gian Đặc trưng Ngẫu nhiên (Random Subspace Method)**
+### 4.1. Hiệu suất trên Tập Test (`102` mẫu — Cell 43, 46, 49) & 5-Fold Cross-Validation (`506` mẫu — Cell 52)
 
-Trên mỗi tập $\mathcal{D}_b$, xây dựng một cây quyết định hồi quy $T_b(\mathbf{x})$ với độ sâu tối đa `max_depth = 10`. Tại mỗi nút phân nhánh, thay vì xét cả 13 đặc trưng, thuật toán chỉ chọn ngẫu nhiên $m_{\text{try}} = \lfloor\sqrt{13}\rfloor = 3$ đặc trưng để tìm ngưỡng cắt tốt nhất. Cơ chế này làm giảm hệ số tương quan $\rho$ giữa các cây trong rừng.
+| Nhóm Đánh giá | MSE | RMSE | MAE | MAPE (%) | $R^2$ | Max Error | Thời gian Huấn luyện |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| **Hold-out Test (`102` mẫu)** | `11.5205` | `3.3942` | `2.0994` | `10.8235%` | `0.8429` | `22.6003` | `0.1655s` |
+| **5-Fold CV (`506` mẫu, Mean ± Std)** | `12.5518 ± 1.9864` | `3.5339` | `2.3361` | `11.6827%` | `0.8459 ± 0.0395` | — | — |
 
-**Step 3 — Tổ hợp Dự đoán (Ensemble Averaging & Variance Reduction)**
+### 4.2. Thống kê Chẩn đoán `Model Summary` (Cell 63)
 
-Dự đoán cuối cùng của `Random Forest` là trung bình cộng dự đoán của cả $B = 100$ cây:
+| Chỉ số Chẩn đoán | Giá trị Thực nghiệm | Nhận xét |
+|---|---:|---|
+| **Cấu trúc Tập hợp** | `100` cây, `Depth 10.0 / 10`, `90.3` lá/cây | Độ phức tạp tập hợp cao nhất trong 3 Baseline |
+| **Train $R^2$** | `0.9526` | Khớp dữ liệu huấn luyện rất cao |
+| **Log-Likelihood / AIC / BIC** | `-859.252` / `1746.505` / `1802.525` | AIC/BIC thấp nhất trên tập Train |
+| **F-statistic** | `602.577` ($p = 0.0$) | Rất có ý nghĩa thống kê |
+| **Durbin-Watson / Ljung-Box $Q$** | `2.069` / `0.50` ($p = 0.48$) | Phần dư độc lập, không có tự tương quan |
+| **Jarque-Bera (Skew / Kurtosis)** | `2170.26` (`1.86` / `13.73`) | Có một số điểm ngoại lai lớn ở nhóm nhà giá cao (`Max_Error = 22.6003`) |
+| **Within ±$3k USD (Test Set — Cell 60)** | `81.37%` | Cao nhất trong 4 mô hình (nhỉnh hơn `MLP Regression` ở mức `76.47%`) |
 
-$$\hat{f}_{\text{RF}}(\mathbf{x}) = \frac{1}{B}\sum_{b=1}^{B} T_b(\mathbf{x})$$
-
-Về mặt toán học, nếu mỗi cây có phương sai $\sigma^2$ và tương quan trung bình giữa hai cây là $\rho$, thì phương sai của rừng giảm xuống còn:
-
-$$\text{Var}\left(\hat{f}_{\text{RF}}(\mathbf{x})\right) = \rho\sigma^2 + \frac{1 - \rho}{B}\sigma^2$$
-
-Nhờ $B = 100$ lớn và $\rho$ nhỏ (do `max_features = 'sqrt'`), sai số tuyệt đối trung bình (`MAE`) và sai số phần trăm (`MAPE`) giảm mạnh.
-
-
-## 4. Evaluation metrics
-| Metric | Giá trị trên Tập Test (`102` mẫu) | Giá trị trên Tập Train (`404` mẫu) | Nhận xét & Đối chiếu với `MLP Regression` |
-| :--- | :---: | :---: | :--- |
-| **MSE (↓)** | **`11.5205`** | `4.1200` | Cạnh tranh sát sao với `MLP Regression` (`12.5605` ở cấu hình chuẩn và `10.0503` ở `MLP_Deep`) |
-| **RMSE (↓)** | **`$3.3942k`** | `$2.0298k` | Sai số toàn phương trung bình căn bậc hai thấp và ổn định |
-| **MAE (↓)** | **`$2.0994k` (`~$2,099 USD` — Best)** | `$1.4162k` | Đạt sai số tuyệt đối trung bình thấp nhất trên tập Hold-out Test (kế tiếp là MLP với `$2.2868k`) |
-| **MAPE (↓)** | **`10.8235%` (`10.82%` — Best)** | `6.6300%` | Đạt sai số phần trăm trung bình thấp nhất trên tập Hold-out Test (kế tiếp là MLP với `11.71%`) |
-| **$R^2$ Score (↑)** | **`0.8429` (`84.29%`)** | `0.9526` | Giải thích `84.29%` phương sai giá nhà |
-| **5-Fold Cross-Validation** | `CV MSE = 12.5518 ± 1.9864` | `CV R² = 0.8459 ± 0.0395` | Đứng Hạng #2 trên 5-Fold CV, sau **`MLP Regression` (`CV R² = 0.8607 ± 0.0459`)** |
-| **Within $\pm\$3,000	ext{ USD}$ (↑)** | **`81.37%` (Best)** | — | Tỷ lệ dự đoán chính xác trong biên độ $\pm\$3,000$ đạt `81.37%` |
-| **Training Time** | `0.1289s` | — | Nhanh hơn mạng MLP nhưng chậm hơn `Linear` và `Decision Tree` khoảng 30–80 lần |
-
-## 5. Used data
-| Tập dữ liệu | Số mẫu | Kích thước | Vai trò đối với `Random Forest Regression` |
-| :--- | :---: | :---: | :--- |
-| `X_train_scaled`, `y_train` | `404` | `(404, 13)` | Rút 100 mẫu Bootstrap để huấn luyện 100 cây quyết định độc lập và đánh giá 5-Fold CV |
-| `X_test_scaled`, `y_test` | `102` | `(102, 13)` | Đánh giá độc lập 5 chỉ số hồi quy và phân tích phần dư trên dữ liệu kiểm thử |
-
-## Code References
-
-| File | Responsibility |
-|---|---|
-| `src/model.py` (`build_baseline_models`, `RandomForestRegressorCompat`) | Khởi tạo `RandomForestRegressor` với `n_estimators = 100` từ `config.yaml` |
-| `src/train.py` | Huấn luyện rừng ngẫu nhiên và lưu `models/random_forest.pkl` |
-| `src/evaluate.py` | Đánh giá 5 chỉ số của `Random Forest` trên tập Train và tập Test |
-| `notebooks/lab04.ipynb` (Mục 15, 16, 17, 19) | Trích xuất `feature_importances_` của 100 cây và đối sánh với `MLP Regression` |
+### 4.3. Kết luận So sánh với `PyTorch MLP Regression`
+- **Trên tập Hold-out Test (`102` mẫu)**: `Random Forest` dẫn đầu về sai số tuyệt đối (`MAE = 2.0994`, `MAPE = 10.82%`, `Within ±$3k = 81.37%`) và đạt `Test MSE = 11.5205`, `R² = 0.8429` (nhỉnh hơn `MLP Regression` với `MSE = 13.5348`, `MAPE = 12.09%`, `R² = 0.8154`).
+- **Trên 5-Fold Cross-Validation (`506` mẫu)**: `PyTorch MLP Regression` (`CV_MSE = 12.4888 ± 2.7870`, `CV_R² = 0.8483 ± 0.0352`) và `Random Forest` (`CV_MSE = 12.5518 ± 1.9864`, `CV_R² = 0.8459 ± 0.0395`) đạt hiệu năng **tương đương nhau**, trong đó `MLP` nhỉnh hơn nhẹ về `CV_MSE` và `CV_R²`, còn `Random Forest` có độ lệch chuẩn `CV_MSE` thấp hơn (`1.9864`) và tốc độ dự đoán `Test` (`0.0109s`) chậm hơn khoảng `5.4` lần so với `MLP` trên GPU CUDA (`0.0020s`).
