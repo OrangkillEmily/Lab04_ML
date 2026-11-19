@@ -99,7 +99,7 @@ ightarrow$ `test_08_tuning_kfold_and_regularization`).
 
 ## Step 10: Kiểm tra các Mô hình Đã Huấn luyện và Bảng Số liệu Mới
 - **Thư mục `models/`**:
-  - `models/mlp_regression.keras`: Mô hình mạng nơ-ron MLP (`993` tham số, `Best Epoch = 91`).
+  - `models/mlp_regression.pth`: Mô hình mạng nơ-ron MLP (`993` tham số, `Best Epoch = 91`).
   - `models/linear_regression.pkl`, `decision_tree.pkl`, `random_forest.pkl`, `standard_scaler.pkl`.
   - `models/mlp_training_history.csv`: Bảng lịch sử `loss`, `mae`, `mape`, `val_loss`, `val_mae`, `val_mape` qua `100` epochs.
 - **Thư mục `reports/metrics/`**:
