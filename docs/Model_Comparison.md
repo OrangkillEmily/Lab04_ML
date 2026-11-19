@@ -29,16 +29,16 @@
 ## 3. Trực quan hóa So sánh MSE, MAE, MAPE (%) và $R^2$
 
 ### 3.1. So sánh Sai số Bình phương Trung bình (MSE)
-\[suspicious link removed\]
+[../reports/figures/model_comparison_mse.png]
 
 ### 3.2. So sánh Sai số Tuyệt đối Trung bình (MAE)
-\[suspicious link removed\]
+[../reports/figures/model_comparison_mae.png]
 
 ### 3.3. So sánh Sai số Phần trăm Tuyệt đối Trung bình (MAPE %)
-\[suspicious link removed\]
+[../reports/figures/model_comparison_mape.png]
 
 ### 3.4. So sánh Hệ số Xác định ($R^2$ Score)
-\[suspicious link removed\]
+[../reports/figures/model_comparison_r2.png]
 
 ## 4. Phân tích Học thuật về Hiệu năng và Thứ hạng của 4 Mô hình
 

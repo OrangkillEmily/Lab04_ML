@@ -1,5 +1,5 @@
 {
-    "run_id": "20261119_182133_b0db99",
+    "run_id": "20261119_194230_20c68c",
     "test_samples": 102,
     "train_samples": 404,
     "test_metrics": {
@@ -10,8 +10,8 @@
             "MAPE": 12.0913,
             "R2": 0.8154,
             "Max_Error": 26.2101,
-            "Training_Time_Sec": 4.7519,
-            "Prediction_Time_Sec": 0.0014
+            "Training_Time_Sec": 5.6373,
+            "Prediction_Time_Sec": 0.0026
         },
         "Linear Regression": {
             "MSE": 24.2911,
@@ -20,8 +20,8 @@
             "MAPE": 16.8664,
             "R2": 0.6688,
             "Max_Error": 25.2604,
-            "Training_Time_Sec": 0.0037,
-            "Prediction_Time_Sec": 0.0005
+            "Training_Time_Sec": 0.002,
+            "Prediction_Time_Sec": 0.0003
         },
         "Decision Tree": {
             "MSE": 10.5431,
@@ -30,7 +30,7 @@
             "MAPE": 13.8809,
             "R2": 0.8562,
             "Max_Error": 10.65,
-            "Training_Time_Sec": 0.0032,
+            "Training_Time_Sec": 0.0035,
             "Prediction_Time_Sec": 0.0004
         },
         "Random Forest": {
@@ -40,8 +40,8 @@
             "MAPE": 10.8235,
             "R2": 0.8429,
             "Max_Error": 22.6003,
-            "Training_Time_Sec": 0.133,
-            "Prediction_Time_Sec": 0.0098
+            "Training_Time_Sec": 0.145,
+            "Prediction_Time_Sec": 0.0115
         }
     },
     "train_metrics": {
@@ -52,8 +52,8 @@
             "MAPE": 10.9641,
             "R2": 0.8857,
             "Max_Error": 17.1829,
-            "Training_Time_Sec": 4.7519,
-            "Prediction_Time_Sec": 0.0022
+            "Training_Time_Sec": 5.6373,
+            "Prediction_Time_Sec": 0.0017
         },
         "Linear Regression": {
             "MSE": 21.6414,
@@ -62,8 +62,8 @@
             "MAPE": 16.5749,
             "R2": 0.7509,
             "Max_Error": 27.2333,
-            "Training_Time_Sec": 0.0037,
-            "Prediction_Time_Sec": 0.0005
+            "Training_Time_Sec": 0.002,
+            "Prediction_Time_Sec": 0.0006
         },
         "Decision Tree": {
             "MSE": 6.6944,
@@ -72,8 +72,8 @@
             "MAPE": 9.604,
             "R2": 0.9229,
             "Max_Error": 16.575,
-            "Training_Time_Sec": 0.0032,
-            "Prediction_Time_Sec": 0.0007
+            "Training_Time_Sec": 0.0035,
+            "Prediction_Time_Sec": 0.0005
         },
         "Random Forest": {
             "MSE": 4.12,
@@ -82,8 +82,8 @@
             "MAPE": 6.6295,
             "R2": 0.9526,
             "Max_Error": 14.8649,
-            "Training_Time_Sec": 0.133,
-            "Prediction_Time_Sec": 0.0143
+            "Training_Time_Sec": 0.145,
+            "Prediction_Time_Sec": 0.0161
         }
     },
     "best_models": {
@@ -107,26 +107,26 @@
     "saved_files": [
         "reports/metrics/metrics_summary.csv",
         "reports/metrics/test_metrics_comparison.csv",
-        "reports/predictions/test_predictions_20261119_182133_b0db99.csv",
+        "reports/predictions/test_predictions_20261119_194230_20c68c.csv",
         "reports/predictions/test_predictions_latest.csv"
     ],
     "saved_figures": [
         "reports/figures/actual_vs_predicted_all.png",
-        "reports/figures/20261119_182133_b0db99/evaluation/actual_vs_predicted_all.png",
+        "reports/figures/20261119_194230_20c68c/evaluation/actual_vs_predicted_all.png",
         "reports/figures/actual_vs_predicted_mlp.png",
-        "reports/figures/20261119_182133_b0db99/evaluation/actual_vs_predicted_mlp.png",
+        "reports/figures/20261119_194230_20c68c/evaluation/actual_vs_predicted_mlp.png",
         "reports/figures/residual_plot_all.png",
-        "reports/figures/20261119_182133_b0db99/evaluation/residual_plot_all.png",
+        "reports/figures/20261119_194230_20c68c/evaluation/residual_plot_all.png",
         "reports/figures/residual_distribution_all.png",
-        "reports/figures/20261119_182133_b0db99/evaluation/residual_distribution_all.png",
+        "reports/figures/20261119_194230_20c68c/evaluation/residual_distribution_all.png",
         "reports/figures/model_comparison_mse.png",
-        "reports/figures/20261119_182133_b0db99/evaluation/model_comparison_mse.png",
+        "reports/figures/20261119_194230_20c68c/evaluation/model_comparison_mse.png",
         "reports/figures/model_comparison_mae.png",
-        "reports/figures/20261119_182133_b0db99/evaluation/model_comparison_mae.png",
+        "reports/figures/20261119_194230_20c68c/evaluation/model_comparison_mae.png",
         "reports/figures/model_comparison_r2.png",
-        "reports/figures/20261119_182133_b0db99/evaluation/model_comparison_r2.png",
+        "reports/figures/20261119_194230_20c68c/evaluation/model_comparison_r2.png",
         "reports/figures/model_comparison_mape.png",
-        "reports/figures/20261119_182133_b0db99/evaluation/model_comparison_mape.png"
+        "reports/figures/20261119_194230_20c68c/evaluation/model_comparison_mape.png"
     ],
-    "duration_seconds": 34.2965
+    "duration_seconds": 39.0913
 }

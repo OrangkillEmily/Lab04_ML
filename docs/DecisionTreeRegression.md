@@ -77,7 +77,7 @@ Khác với `Linear Regression` (dùng siêu phẳng toàn cục) và `PyTorch M
 | Nhóm Đánh giá | MSE | RMSE | MAE | MAPE (%) | $R^2$ | Max Error | Thời gian Huấn luyện |
 |---|---:|---:|---:|---:|---:|---:|---:|
 | **Hold-out Test (`102` mẫu)** | `10.5431` | `3.2470` | `2.5192` | `13.8809%` | `0.8562` | `10.6500` | `0.0073s` |
-| **5-Fold CV (`506` mẫu, Mean ± Std)** | `18.3829 ± 11.6161` | `4.1529` | `2.8782` | `14.5435%` | `0.7832 ± 0.1212` | — | — |
+| **5-Fold CV (`506` mẫu, Mean ± Std)** | `18.3829 ± 11.6161` | `4.1529` | `2.8782` | `14.5435%` | `0.7832 ± 0.1212` | 15.8742 (Max 30.7333) | 0.0028s/fold (Tổng 0.0142s) |
 
 ### 4.2. Thống kê Chẩn đoán `Model Summary` (Cell 63)
 

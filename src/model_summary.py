@@ -17,6 +17,7 @@ bảng học thuật chuẩn `statsmodels` thống nhất cho TOÀN BỘ các m�
 
 import copy
 from datetime import datetime
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -521,14 +522,28 @@ def _run_kfold_and_tuning_internal(
 
         baselines = build_baseline_models(config)
         for name, mdl in baselines.items():
+            t_start = time.perf_counter()
             mdl.fit(X_tr, y_tr)
+            fold_train_time = time.perf_counter() - t_start
             m = compute_regression_metrics(y_va, mdl.predict(X_va))
-            cv_rows.append({"Fold": fold_idx + 1, "Model": name, **m})
+            cv_rows.append({
+                "Fold": fold_idx + 1,
+                "Model": name,
+                **m,
+                "Training_Time_Sec": fold_train_time,
+            })
 
+        t_start = time.perf_counter()
         mlp_cv = build_mlp_model(input_dim=X_tr.shape[1], config=config)
         mlp_cv.fit(X_tr, y_tr, epochs=cv_epochs, batch_size=batch_size, verbose=0)
+        fold_train_time = time.perf_counter() - t_start
         m_mlp = compute_regression_metrics(y_va, np.asarray(mlp_cv.predict(X_va)).ravel())
-        cv_rows.append({"Fold": fold_idx + 1, "Model": "MLP Regression", **m_mlp})
+        cv_rows.append({
+            "Fold": fold_idx + 1,
+            "Model": "MLP Regression",
+            **m_mlp,
+            "Training_Time_Sec": fold_train_time,
+        })
 
     cv_df = pd.DataFrame(cv_rows)
     cv_summary_df = (
@@ -542,6 +557,10 @@ def _run_kfold_and_tuning_internal(
             CV_MAPE_Mean=("MAPE", "mean"),
             CV_R2_Mean=("R2", "mean"),
             CV_R2_Std=("R2", "std"),
+            CV_Max_Error_Mean=("Max_Error", "mean"),
+            CV_Max_Error_Max=("Max_Error", "max"),
+            CV_Train_Time_Mean_Sec=("Training_Time_Sec", "mean"),
+            CV_Train_Time_Total_Sec=("Training_Time_Sec", "sum"),
         )
         .sort_values(by="CV_R2_Mean", ascending=False)
         .reset_index(drop=True)

@@ -11,7 +11,7 @@ Total Parameters: 993 | Backend: PyTorch (torch.nn.Module | CUDA)
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:                 MLP(13-32-16-1)   Log Likelihood:             -1036.909
 Date:                 Thu, 19 Nov 2026   AIC:                         2101.817
-Time:                         18:37:02   BIC:                         2157.837
+Time:                         19:45:30   BIC:                         2157.837
 Sample:                        0 - 404   HQIC:                        2123.993
 Covariance Type:         Adam Backprop   Train R-squared:               0.8857
 Test MSE / RMSE:       13.535/   3.679   Test R-squared:                0.8154
@@ -50,7 +50,7 @@ Number of parameters: 14 (1 intercept + 13 standardized features)
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:                  OLS Regression   Log Likelihood:             -1194.322
 Date:                 Thu, 19 Nov 2026   AIC:                         2416.644
-Time:                         18:37:02   BIC:                         2472.664
+Time:                         19:45:30   BIC:                         2472.664
 Sample:                        0 - 404   HQIC:                        2438.820
 Covariance Type:       nonrobust (OLS)   Train R-squared:               0.7509
 Test MSE / RMSE:       24.291/   4.929   Test R-squared:                0.6688
@@ -97,7 +97,7 @@ Actual Tree Depth: 6 | Number of Leaf Nodes: 34
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:                    DecisionTree   Log Likelihood:              -957.309
 Date:                 Thu, 19 Nov 2026   AIC:                         1942.619
-Time:                         18:37:02   BIC:                         1998.639
+Time:                         19:45:30   BIC:                         1998.639
 Sample:                        0 - 404   HQIC:                        1964.795
 Covariance Type:         CART Impurity   Train R-squared:               0.9229
 Test MSE / RMSE:       10.543/   3.247   Test R-squared:                0.8562
@@ -142,7 +142,7 @@ Tree Depth (Mean / Max): 10.0 / 10 | Mean Leaves per Tree: 90.3
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:                    RandomForest   Log Likelihood:              -859.252
 Date:                 Thu, 19 Nov 2026   AIC:                         1746.505
-Time:                         18:37:02   BIC:                         1802.525
+Time:                         19:45:30   BIC:                         1802.525
 Sample:                        0 - 404   HQIC:                        1768.681
 Covariance Type:         CART Impurity   Train R-squared:               0.9526
 Test MSE / RMSE:       11.521/   3.394   Test R-squared:                0.8429
@@ -188,7 +188,7 @@ Total Parameters: 369 | Backend: PyTorch (torch.nn.Module | CUDA)
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:            MLP_Small(13-16-8-1)   Log Likelihood:             -1031.477
 Date:                 Thu, 19 Nov 2026   AIC:                         2090.953
-Time:                         18:37:27   BIC:                         2146.973
+Time:                         19:46:02   BIC:                         2146.973
 Sample:                        0 - 404   HQIC:                        2113.129
 Covariance Type:         Adam Backprop   Train R-squared:               0.8888
 Test MSE / RMSE:       12.499/   3.535   Test R-squared:                0.8296
@@ -228,7 +228,7 @@ Total Parameters: 3009 | Backend: PyTorch (torch.nn.Module | CUDA)
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:            MLP_Wide(13-64-32-1)   Log Likelihood:             -1030.410
 Date:                 Thu, 19 Nov 2026   AIC:                         2088.820
-Time:                         18:37:27   BIC:                         2144.840
+Time:                         19:46:02   BIC:                         2144.840
 Sample:                        0 - 404   HQIC:                        2110.996
 Covariance Type:         Adam Backprop   Train R-squared:               0.8893
 Test MSE / RMSE:       13.769/   3.711   Test R-squared:                0.8122
@@ -268,7 +268,7 @@ Total Parameters: 3521 | Backend: PyTorch (torch.nn.Module | CUDA)
 Dep. Variable:                    MEDV   No. Observations:                 404
 Model:         MLP_Deep(13-64-32-16-1)   Log Likelihood:             -1006.192
 Date:                 Thu, 19 Nov 2026   AIC:                         2040.383
-Time:                         18:37:27   BIC:                         2096.403
+Time:                         19:46:02   BIC:                         2096.403
 Sample:                        0 - 404   HQIC:                        2062.559
 Covariance Type:         Adam Backprop   Train R-squared:               0.9018
 Test MSE / RMSE:       13.765/   3.710   Test R-squared:                0.8123
@@ -301,11 +301,11 @@ K-Fold Cross-Validation & MLP Architecture Tuning Summary
 ==============================================================================
 1. 5-FOLD CROSS-VALIDATION RESULTS (506 samples, leak-free per-fold scaling)
 ------------------------------------------------------------------------------
-            Model  K_Folds  CV_MSE_Mean  CV_MSE_Std  CV_RMSE_Mean  CV_MAE_Mean  CV_MAPE_Mean  CV_R2_Mean  CV_R2_Std
-   MLP Regression        5      12.4888      2.7870        3.5177       2.4428       11.9853      0.8483     0.0352
-    Random Forest        5      12.5518      1.9864        3.5339       2.3361       11.6827      0.8459     0.0395
-    Decision Tree        5      18.3829     11.6161        4.1529       2.8782       14.5435      0.7832     0.1212
-Linear Regression        5      23.4886      2.0601        4.8428       3.3885       17.0105      0.7152     0.0419
+            Model  K_Folds  CV_MSE_Mean  CV_MSE_Std  CV_RMSE_Mean  CV_MAE_Mean  CV_MAPE_Mean  CV_R2_Mean  CV_R2_Std  CV_Max_Error_Mean  CV_Max_Error_Max  CV_Train_Time_Mean_Sec  CV_Train_Time_Total_Sec
+   MLP Regression        5      12.4888      2.7870        3.5177       2.4428       11.9853      0.8483     0.0352            17.6804           24.3206                  4.0215                  20.1073
+    Random Forest        5      12.5518      1.9864        3.5339       2.3361       11.6827      0.8459     0.0395            18.1242           26.2513                  0.1523                   0.7613
+    Decision Tree        5      18.3829     11.6161        4.1529       2.8782       14.5435      0.7832     0.1212            15.8742           30.7333                  0.0028                   0.0142
+Linear Regression        5      23.4886      2.0601        4.8428       3.3885       17.0105      0.7152     0.0419            21.7948           27.6509                  0.0011                   0.0053
 ==============================================================================
 2. MLP ARCHITECTURE & HYPERPARAMETER TUNING COMPARISON (PyTorch)
 ------------------------------------------------------------------------------
